@@ -14,6 +14,13 @@ interface NpmPackageInfo {
 }
 
 /**
+ * 判断是否为精确的 npm 版本号
+ */
+export function isExactNpmVersion(version: string): boolean {
+  return /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version);
+}
+
+/**
  * 解析版本号
  * 格式：major.minor.patch-prerelease
  */
@@ -170,7 +177,7 @@ export async function resolveNpmVersion(
     }
 
     // 精确版本号（如 1.2.3）→ 直接返回
-    if (/^\d+\.\d+\.\d+/.test(versionRange)) {
+    if (isExactNpmVersion(versionRange)) {
       // 验证版本是否存在
       if (versionRange in packageInfo.versions) {
         return versionRange;

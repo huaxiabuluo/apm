@@ -21,6 +21,7 @@ vi.mock('../git/remote', () => ({
 vi.mock('../npm/resolve-version', () => ({
   resolveNpmVersion: vi.fn(),
   compareVersions: vi.fn(),
+  isExactNpmVersion: vi.fn(),
 }));
 
 vi.mock('../skills-json', () => ({
@@ -28,7 +29,7 @@ vi.mock('../skills-json', () => ({
 }));
 
 import { filterSemanticVersions, getRemoteBranchCommit, getRemoteTags } from '../git/remote';
-import { compareVersions, resolveNpmVersion } from '../npm/resolve-version';
+import { compareVersions, isExactNpmVersion, resolveNpmVersion } from '../npm/resolve-version';
 import { readSkillsJson } from '../skills-json';
 import { checkCommand, checkSkillVersion } from './check';
 
@@ -37,6 +38,7 @@ const mockFilterSemanticVersions = filterSemanticVersions as any;
 const mockGetRemoteBranchCommit = getRemoteBranchCommit as any;
 const mockResolveNpmVersion = resolveNpmVersion as any;
 const mockCompareVersions = compareVersions as any;
+const mockIsExactNpmVersion = isExactNpmVersion as any;
 const mockReadSkillsJson = readSkillsJson as any;
 
 describe('checkCommand', () => {
@@ -45,6 +47,7 @@ describe('checkCommand', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     consoleLogSpy.mockClear();
+    mockIsExactNpmVersion.mockImplementation((version: string) => version !== 'latest');
   });
 
   describe('检查 NPM 包更新', () => {
@@ -269,6 +272,31 @@ describe('checkSkillVersion', () => {
         current: { version: '1.0.0' },
         hasUpdate: false,
         error: 'Package not found',
+      });
+    });
+
+    it('should treat latest as a floating npm version without reporting updates', async () => {
+      const entry = {
+        sourceType: 'npm' as const,
+        source: '@ai-dancer/apm',
+        sourceUrl: 'https://registry.npmjs.org/@ai-dancer/apm',
+        version: 'latest',
+        skillPath: 'skills/apm/SKILL.md',
+      };
+
+      mockIsExactNpmVersion.mockReturnValue(false);
+      mockResolveNpmVersion.mockImplementation((source: string, version?: string) =>
+        Promise.resolve(version === 'latest' ? '1.2.3' : '1.2.3')
+      );
+
+      const result = await checkSkillVersion('apm', entry);
+
+      expect(result).toEqual({
+        name: 'apm',
+        sourceType: 'npm',
+        current: { version: '1.2.3', extra: 'latest' },
+        latest: { version: '1.2.3' },
+        hasUpdate: false,
       });
     });
   });

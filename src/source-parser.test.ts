@@ -20,4 +20,13 @@ describe('parseSource', () => {
       registry: 'https://registry.npmmirror.com/',
     });
   });
+
+  it('parses latest as an npm version specifier', () => {
+    expect(parseSource('npm:@ai-dancer/apm@latest')).toMatchObject({
+      sourceType: 'npm',
+      source: '@ai-dancer/apm',
+      sourceUrl: 'https://registry.npmjs.org/@ai-dancer/apm',
+      version: 'latest',
+    });
+  });
 });

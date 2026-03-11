@@ -14,6 +14,16 @@ import { PROJECT_APM_DIR, APM_JSON_FILE, APM_JSON_VERSION } from '../constants.j
 import type { InitOptions } from '../types.js';
 import { showLogo } from '../logo.js';
 
+const BUILTIN_SKILLS = {
+  apm: {
+    source: '@ai-dancer/apm',
+    sourceType: 'npm' as const,
+    sourceUrl: 'https://registry.npmjs.org/@ai-dancer/apm',
+    version: 'latest',
+    skillPath: 'skills/apm/SKILL.md',
+  },
+};
+
 /**
  * 多选辅助函数（兼容 clack 的取消处理）
  */
@@ -137,7 +147,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
           additionalAgents: selectedAgents.map(toPersistedAgentConfig),
         }
       : {}),
-    skills: {},
+    skills: BUILTIN_SKILLS,
   };
 
   // 确保目录存在
@@ -159,5 +169,11 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   }
 
   console.log();
-  p.outro(pc.green(`Successfully initialized APM! Run ${pc.yellow('apm add <source>')} to add skills.`));
+  p.outro(
+    pc.green(
+      `Successfully initialized APM! Run ${pc.yellow('apm install')} to install built-in skills, or ${pc.yellow(
+        'apm add <source>'
+      )} to add more skills.`
+    )
+  );
 }

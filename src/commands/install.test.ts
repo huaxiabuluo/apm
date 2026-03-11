@@ -50,6 +50,11 @@ vi.mock('../npm/download', () => ({
   cleanup: vi.fn(),
 }));
 
+vi.mock('../npm/resolve-version', () => ({
+  isExactNpmVersion: vi.fn(),
+  resolveNpmVersion: vi.fn(),
+}));
+
 vi.mock('../skills-json', () => ({
   readSkillsJson: vi.fn(),
 }));
@@ -59,6 +64,7 @@ import { existsSync } from 'fs';
 import { mkdir, readdir, rm } from 'fs/promises';
 import { cloneRepo, cleanup as gitCleanup } from '../git/clone';
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
+import { isExactNpmVersion, resolveNpmVersion } from '../npm/resolve-version';
 import { readSkillsJson } from '../skills-json';
 import { installCommand } from './install';
 
@@ -71,6 +77,8 @@ const mockCloneRepo = cloneRepo as any;
 const mockGitCleanup = gitCleanup as any;
 const mockDownloadNpmPackage = downloadNpmPackage as any;
 const mockNpmCleanup = npmCleanup as any;
+const mockIsExactNpmVersion = isExactNpmVersion as any;
+const mockResolveNpmVersion = resolveNpmVersion as any;
 const mockReadSkillsJson = readSkillsJson as any;
 
 const mockIntro = p.intro as any;
@@ -108,6 +116,8 @@ describe('installCommand', () => {
     mockMkdir.mockResolvedValue(undefined);
     mockReaddir.mockResolvedValue([]);
     mockExistsSync.mockReturnValue(false);
+    mockIsExactNpmVersion.mockImplementation((version: string) => version !== 'latest');
+    mockResolveNpmVersion.mockResolvedValue('1.0.0');
   });
 
   describe('当没有技能时', () => {
@@ -158,6 +168,28 @@ describe('installCommand', () => {
 
       expect(mockDownloadNpmPackage).toHaveBeenCalledWith('test-package', '1.0.0', undefined);
       expect(mockCloneRepo).toHaveBeenCalledWith('https://github.com/owner/repo.git', 'v1.0.0');
+    });
+
+    it('应该在下载前解析 latest 这类浮动 npm 版本', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          'npm-skill': {
+            sourceType: 'npm',
+            source: '@ai-dancer/apm',
+            sourceUrl: 'https://registry.npmjs.org/@ai-dancer/apm',
+            version: 'latest',
+            skillPath: 'skills/apm/SKILL.md',
+          },
+        },
+      });
+      mockResolveNpmVersion.mockResolvedValue('1.2.3');
+      mockDownloadNpmPackage.mockResolvedValue('/tmp/npm-skill');
+
+      await installCommand();
+
+      expect(mockResolveNpmVersion).toHaveBeenCalledWith('@ai-dancer/apm', 'latest', undefined);
+      expect(mockDownloadNpmPackage).toHaveBeenCalledWith('@ai-dancer/apm', '1.2.3', undefined);
     });
 
     it('应该显示安装进度', async () => {

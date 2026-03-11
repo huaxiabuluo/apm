@@ -1,7 +1,7 @@
 {
   "name": "@ai-dancer/apm",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Agent Package Management - Universal package manager for AI agent skills",
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
   "files": [
     "dist",
     "bin",
+    "skills",
     "README.md",
     "LICENSE"
   ],
@@ -37,6 +38,7 @@
     "lint": "npm run lint:eslint && npm run lint:format",
     "lint:eslint": "eslint .",
     "lint:format": "prettier --check .",
+    "publish:experimental": "node scripts/publish-experimental.mjs",
     "prepare": "husky",
     "prepublishOnly": "npm run build",
     "test": "vitest",

@@ -6,7 +6,7 @@
 import Table from 'cli-table3';
 import pc from 'picocolors';
 import { filterSemanticVersions, getRemoteBranchCommit, getRemoteTags } from '../git/remote';
-import { compareVersions, resolveNpmVersion } from '../npm/resolve-version';
+import { compareVersions, isExactNpmVersion, resolveNpmVersion } from '../npm/resolve-version';
 import { readSkillsJson } from '../skills-json';
 import { showLogo } from '../logo.js';
 import type { BranchSkillEntry, CheckOptions, NpmSkillEntry, TagSkillEntry, VersionCheckResult } from '../types';
@@ -20,18 +20,22 @@ import type { BranchSkillEntry, CheckOptions, NpmSkillEntry, TagSkillEntry, Vers
  */
 async function checkNpmSkill(name: string, entry: NpmSkillEntry): Promise<VersionCheckResult> {
   try {
+    const current = isExactNpmVersion(entry.version)
+      ? entry.version
+      : await resolveNpmVersion(entry.source, entry.version, entry.registry);
     const latest = await resolveNpmVersion(entry.source, undefined, entry.registry);
 
     return {
       name,
       sourceType: entry.sourceType,
       current: {
-        version: entry.version,
+        version: current,
+        extra: current === entry.version ? undefined : entry.version,
       },
       latest: {
         version: latest,
       },
-      hasUpdate: compareVersions(latest, entry.version) > 0,
+      hasUpdate: isExactNpmVersion(entry.version) ? compareVersions(latest, current) > 0 : false,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

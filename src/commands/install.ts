@@ -10,6 +10,7 @@ import pc from 'picocolors';
 import { getConfiguredAgentMap, resolveAgentSkillsDir } from '../agents.js';
 import { cloneRepo, cleanup as gitCleanup, checkoutCommit } from '../git/clone';
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
+import { isExactNpmVersion, resolveNpmVersion } from '../npm/resolve-version';
 import { readSkillsJson } from '../skills-json';
 import { showLogo } from '../logo.js';
 import type { AgentConfig, InstallOptions, SkillEntry } from '../types';
@@ -156,7 +157,10 @@ async function installSkill(
   // 根据源类型选择下载方式
   if (entry.sourceType === 'npm') {
     const npmEntry = entry as any;
-    tempDir = await downloadNpmPackage(entry.source, entry.version!, npmEntry.registry);
+    const resolvedVersion = isExactNpmVersion(entry.version!)
+      ? entry.version!
+      : await resolveNpmVersion(entry.source, entry.version!, npmEntry.registry);
+    tempDir = await downloadNpmPackage(entry.source, resolvedVersion, npmEntry.registry);
     cleanupFn = npmCleanup;
   } else if (entry.sourceType === 'github' || entry.sourceType === 'git') {
     // Git 仓库：克隆到临时目录

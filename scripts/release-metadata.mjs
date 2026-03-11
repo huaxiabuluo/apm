@@ -37,7 +37,7 @@ function inferNpmTag(prerelease) {
     return 'latest';
   }
 
-  return prerelease.split('.')[0];
+  return prerelease.split(/[.-]/)[0];
 }
 
 const packageJsonPath = path.resolve('package.json');
