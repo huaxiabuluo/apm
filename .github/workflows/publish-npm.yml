@@ -1,0 +1,161 @@
+name: Publish npm package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version in package.json, for example 1.2.3 or 1.2.3-beta.1
+        required: true
+        type: string
+      npm_tag:
+        description: npm dist-tag. auto derives from the prerelease identifier.
+        required: true
+        default: auto
+        type: choice
+        options:
+          - auto
+          - latest
+          - beta
+          - alpha
+          - rc
+          - next
+      dry_run:
+        description: Run npm publish with --dry-run
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: npm-publish-${{ github.workflow }}-${{ github.ref_name || inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      package_name: ${{ steps.meta.outputs.package_name }}
+      tag_name: ${{ steps.meta.outputs.tag_name }}
+      version: ${{ steps.meta.outputs.version }}
+      npm_tag: ${{ steps.meta.outputs.npm_tag }}
+      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Resolve release metadata
+        id: meta
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          RELEASE_VERSION: ${{ inputs.version || '' }}
+          RELEASE_NPM_TAG: ${{ inputs.npm_tag || 'auto' }}
+        run: node scripts/release-metadata.mjs
+
+      - name: Write summary
+        run: |
+          {
+            echo "## Release metadata"
+            echo ""
+            echo "- package: ${{ steps.meta.outputs.package_name }}"
+            echo "- version: ${{ steps.meta.outputs.version }}"
+            echo "- tag: ${{ steps.meta.outputs.tag_name }}"
+            echo "- npm dist-tag: ${{ steps.meta.outputs.npm_tag }}"
+            echo "- prerelease: ${{ steps.meta.outputs.is_prerelease }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  verify:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run CI checks
+        run: npm run ci
+
+  publish:
+    needs:
+      - prepare
+      - verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.1
+
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: npm run build
+
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TAG: ${{ needs.prepare.outputs.npm_tag }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: |
+          args=(publish --access public)
+
+          if [ "$NPM_TAG" != "latest" ]; then
+            args+=(--tag "$NPM_TAG")
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
+          fi
+
+          npm "${args[@]}"
+
+      - name: Write publish summary
+        run: |
+          {
+            echo "## Publish result"
+            echo ""
+            echo "- package: ${{ needs.prepare.outputs.package_name }}"
+            echo "- version: ${{ needs.prepare.outputs.version }}"
+            echo "- npm dist-tag: ${{ needs.prepare.outputs.npm_tag }}"
+            echo "- dry run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}"
+          } >> "$GITHUB_STEP_SUMMARY"

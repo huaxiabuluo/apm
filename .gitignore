@@ -1,0 +1,44 @@
+# dependencies
+node_modules
+
+# output
+dist
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+*.log
+
+# dotenv environment variable files
+.env
+.env.local
+.env.*.local
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# IDEs
+.idea
+.vscode
+.DS_Store
+
+# agent directories
+.claude/
+.cursor/
+.gemini/
+.codebuddy/
+.agents/
+
+# build artifacts
+bin/_chunks/
+bin/cli-wrapper.mjs
+bin/cli.d.mts
+
+# project specific
+apm.json
