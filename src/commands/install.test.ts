@@ -62,7 +62,7 @@ vi.mock('../skills-json', () => ({
 import * as p from '@clack/prompts';
 import { existsSync } from 'fs';
 import { mkdir, readdir, rm } from 'fs/promises';
-import { cloneRepo, cleanup as gitCleanup } from '../git/clone';
+import { checkoutCommit, cloneRepo, cleanup as gitCleanup } from '../git/clone';
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
 import { isExactNpmVersion, resolveNpmVersion } from '../npm/resolve-version';
 import { readSkillsJson } from '../skills-json';
@@ -73,6 +73,7 @@ const mockReaddir = readdir as any;
 const mockExistsSync = existsSync as any;
 
 const mockRm = rm as any;
+const mockCheckoutCommit = checkoutCommit as any;
 const mockCloneRepo = cloneRepo as any;
 const mockGitCleanup = gitCleanup as any;
 const mockDownloadNpmPackage = downloadNpmPackage as any;
@@ -197,6 +198,13 @@ describe('installCommand', () => {
 
       expect(mockSpinner).toHaveBeenCalled();
     });
+
+    it('应该显示数量和技能名称摘要', async () => {
+      await installCommand();
+
+      expect(mockLogMessage).toHaveBeenCalledWith('Installing 2 skills: npm-skill, github-skill');
+      expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('Installed 2 skills.'));
+    });
   });
 
   describe('安装指定技能', () => {
@@ -228,6 +236,35 @@ describe('installCommand', () => {
 
       expect(mockDownloadNpmPackage).toHaveBeenCalledTimes(1);
       expect(mockDownloadNpmPackage).toHaveBeenCalledWith('package1', '1.0.0', undefined);
+    });
+
+    it('技能较多时应该截断名称摘要', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          skill1: mockSkills.skills.skill1,
+          skill2: mockSkills.skills.skill2,
+          skill3: {
+            sourceType: 'npm',
+            source: 'package3',
+            sourceUrl: 'https://registry.npmjs.org/package3',
+            version: '3.0.0',
+            skillPath: 'SKILL.md',
+          },
+          skill4: {
+            sourceType: 'npm',
+            source: 'package4',
+            sourceUrl: 'https://registry.npmjs.org/package4',
+            version: '4.0.0',
+            skillPath: 'SKILL.md',
+          },
+        },
+      });
+      mockDownloadNpmPackage.mockResolvedValue('/tmp/skill');
+
+      await installCommand();
+
+      expect(mockLogMessage).toHaveBeenCalledWith('Installing 4 skills: skill1, skill2, skill3, ...');
     });
   });
 
@@ -425,6 +462,51 @@ describe('installCommand', () => {
       await installCommand();
 
       expect(mockGitCleanup).toHaveBeenCalled();
+    });
+  });
+
+  describe('预下载目录复用', () => {
+    it('传入 prefetchedSourceDir 时不应重复下载 npm 包或清理临时目录', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          'test-skill': {
+            sourceType: 'npm',
+            source: 'test-package',
+            sourceUrl: 'https://registry.npmjs.org/test-package',
+            version: '1.0.0',
+            skillPath: 'SKILL.md',
+          },
+        },
+      });
+
+      await installCommand({ internal: true, prefetchedSourceDir: '/tmp/prefetched' });
+
+      expect(mockDownloadNpmPackage).not.toHaveBeenCalled();
+      expect(mockNpmCleanup).not.toHaveBeenCalled();
+    });
+
+    it('传入 prefetchedSourceDir 时不应重复 clone 或 checkout git 仓库', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          'test-skill': {
+            sourceType: 'github',
+            source: 'owner/repo',
+            sourceUrl: 'https://github.com/owner/repo.git',
+            mode: 'branch',
+            branch: 'main',
+            commit: 'abc123',
+            skillPath: 'SKILL.md',
+          },
+        },
+      });
+
+      await installCommand({ internal: true, prefetchedSourceDir: '/tmp/prefetched' });
+
+      expect(mockCloneRepo).not.toHaveBeenCalled();
+      expect(mockCheckoutCommit).not.toHaveBeenCalled();
+      expect(mockGitCleanup).not.toHaveBeenCalled();
     });
   });
 });

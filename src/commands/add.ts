@@ -40,6 +40,44 @@ function isCancelled(value: unknown): value is symbol {
   return typeof value === 'symbol';
 }
 
+function getNoSkillsMessage(sourceType: string): string {
+  if (sourceType === 'npm') {
+    return 'Package does not contain any valid SKILL.md files';
+  }
+
+  return 'No valid SKILL.md files found in repository';
+}
+
+function formatVersionMessage(mode: string | undefined, version: string): string {
+  if (mode) {
+    return `Version: ${pc.yellow(mode)} ${pc.yellow(version)}`;
+  }
+
+  return `Version: ${pc.yellow(version)}`;
+}
+
+function formatResolvedNpmVersionMessage(requestedVersion: string | undefined, resolvedVersion: string): string {
+  const requested = requestedVersion || 'latest';
+
+  if (requested === resolvedVersion) {
+    return formatVersionMessage(undefined, resolvedVersion);
+  }
+
+  return `Version: ${pc.yellow(requested)} ${pc.dim('->')} ${pc.yellow(resolvedVersion)}`;
+}
+
+async function cleanupTempDir(
+  sourceType: 'github' | 'git' | 'npm' | 'local',
+  tempDir: string | null
+): Promise<void> {
+  if (!tempDir || sourceType === 'local') {
+    return;
+  }
+
+  const cleanupFn = sourceType === 'npm' ? npmCleanup : gitCleanup;
+  await cleanupFn(tempDir);
+}
+
 /**
  * 执行 add 命令
  *
@@ -55,8 +93,8 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
   // 1. 解析源地址
   const parsed = parseSource(sourceInput);
   p.log.message(`Source: ${pc.cyan(parsed.sourceUrl)}`);
-  if (parsed.version) {
-    p.log.message(`Version: ${pc.yellow(parsed.mode || '')} ${pc.yellow(parsed.version)}`);
+  if (parsed.version && parsed.sourceType !== 'npm') {
+    p.log.message(formatVersionMessage(parsed.mode, parsed.version));
   }
 
   // 2. 处理不同类型的源
@@ -76,9 +114,10 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       // NPM 包：解析版本范围并下载
       spinner.start('Resolving package version...');
       try {
+        const requestedVersion = parsed.version;
         const exactVersion = await resolveNpmVersion(parsed.source, parsed.version, parsed.registry);
         parsed.version = exactVersion;
-        spinner.stop(`Version: ${pc.yellow(exactVersion)}`);
+        spinner.stop(formatResolvedNpmVersionMessage(requestedVersion, exactVersion));
         if (parsed.registry) {
           p.log.message(`Registry: ${pc.dim(parsed.registry)}`);
         }
@@ -149,10 +188,9 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
     discoveredSkills = await discoverSkills(tempDir);
 
     if (discoveredSkills.length === 0) {
-      spinner.stop(pc.red('No skills found'));
-      p.outro(pc.red('No valid SKILL.md files found in repository'));
-      const cleanupFn = parsed.sourceType === 'npm' ? npmCleanup : gitCleanup;
-      await cleanupFn(tempDir!);
+      spinner.stop();
+      p.outro(pc.red(getNoSkillsMessage(parsed.sourceType)));
+      await cleanupTempDir(parsed.sourceType, tempDir);
       process.exit(1);
     }
 
@@ -169,11 +207,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
         console.log();
       }
       p.outro(`Use ${pc.yellow('--skill <name>')} to install specific skills`);
-      if (parsed.sourceType === 'npm') {
-        await npmCleanup(tempDir!);
-      } else {
-        await gitCleanup(tempDir!);
-      }
+      await cleanupTempDir(parsed.sourceType, tempDir);
       process.exit(0);
     }
 
@@ -190,8 +224,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       if (selectedSkills.length === 0) {
         p.log.error(`No matching skills found for: ${options.skill.join(', ')}`);
         p.outro(pc.dim('Available skills:') + ' ' + discoveredSkills.map((s) => pc.cyan(s.name)).join(', '));
-        const cleanupFn = parsed.sourceType === 'npm' ? npmCleanup : gitCleanup;
-        await cleanupFn(tempDir!);
+        await cleanupTempDir(parsed.sourceType, tempDir);
         process.exit(1);
       }
       p.log.info(
@@ -223,8 +256,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
 
       if (isCancelled(selected)) {
         p.cancel('Installation cancelled');
-        const cleanupFn = parsed.sourceType === 'npm' ? npmCleanup : gitCleanup;
-        await cleanupFn(tempDir!);
+        await cleanupTempDir(parsed.sourceType, tempDir);
         process.exit(0);
       }
 
@@ -342,13 +374,12 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       }
     }
 
-    // 清理临时目录（在安装之前）
-    const cleanupFn = parsed.sourceType === 'npm' ? npmCleanup : gitCleanup;
-    await cleanupFn(tempDir!);
-
     // 自动安装技能
     if (success.length > 0) {
       const addedNames = success.map((r) => r.skill.name);
+      if (!tempDir) {
+        throw new Error('Temporary source directory is missing before install');
+      }
 
       try {
         // 从 apm.json 读取 agents 配置
@@ -362,14 +393,19 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
           skills: addedNames,
           agents: targetAgents,
           global,
+          prefetchedSourceDir: tempDir,
         });
-      } catch {
+      } catch (error) {
         // 安装失败不影响添加成功
+        p.log.error(error instanceof Error ? error.message : String(error));
         p.outro(pc.red('Some skills failed to install'));
         process.exit(1);
+      } finally {
+        await cleanupTempDir(parsed.sourceType, tempDir);
       }
     } else {
       // 没有成功添加任何技能
+      await cleanupTempDir(parsed.sourceType, tempDir);
       p.outro(pc.red('No skills were added'));
       process.exit(1);
     }
@@ -380,10 +416,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
     spinner.stop();
     p.log.error(pc.red('Failed to discover skills'));
     p.log.error(error instanceof Error ? error.message : String(error));
-    if (tempDir) {
-      const cleanupFn = parsed.sourceType === 'npm' ? npmCleanup : gitCleanup;
-      await cleanupFn(tempDir);
-    }
+    await cleanupTempDir(parsed.sourceType, tempDir);
     process.exit(1);
   }
 }

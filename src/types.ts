@@ -46,11 +46,6 @@ export interface SkillsJson {
 }
 
 /**
- * 单个技能条目（联合类型）
- */
-export type SkillEntry = TagSkillEntry | BranchSkillEntry | NpmSkillEntry | LocalSkillEntry;
-
-/**
  * Tag 类型的技能条目
  */
 export interface TagSkillEntry {
@@ -76,6 +71,11 @@ export interface BranchSkillEntry {
 }
 
 /**
+ * Git 类型的技能条目（tag 或 branch）
+ */
+export type GitSkillEntry = TagSkillEntry | BranchSkillEntry;
+
+/**
  * NPM 类型的技能条目
  */
 export interface NpmSkillEntry {
@@ -97,6 +97,11 @@ export interface LocalSkillEntry {
   sourceUrl: string;
   skillPath: string;
 }
+
+/**
+ * 单个技能条目（联合类型）
+ */
+export type SkillEntry = GitSkillEntry | NpmSkillEntry | LocalSkillEntry;
 
 /**
  * 解析后的源地址
@@ -181,6 +186,9 @@ export interface InstallOptions {
 
   /** 内部模式（不显示 intro/outro） */
   internal?: boolean;
+
+  /** 预下载的源目录（内部复用 add 命令下载结果，调用方负责在并行安装全部完成前保持其有效） */
+  prefetchedSourceDir?: string;
 }
 
 /**

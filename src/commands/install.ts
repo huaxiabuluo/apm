@@ -13,7 +13,7 @@ import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
 import { isExactNpmVersion, resolveNpmVersion } from '../npm/resolve-version';
 import { readSkillsJson } from '../skills-json';
 import { showLogo } from '../logo.js';
-import type { AgentConfig, InstallOptions, SkillEntry } from '../types';
+import type { AgentConfig, GitSkillEntry, InstallOptions, NpmSkillEntry, SkillEntry } from '../types';
 
 /**
  * 解析父目录的符号链接
@@ -143,20 +143,25 @@ async function copyDirectory(source: string, target: string): Promise<void> {
  * @param targetAgents - 目标 agent 列表
  * @param allAgents - 所有可用的 agents 配置
  * @param global - 是否为全局安装
+ * @param prefetchedSourceDir - 由调用方提供的预下载目录；在所有并行安装任务完成前必须保持有效
  */
 async function installSkill(
   name: string,
   entry: SkillEntry,
   targetAgents: string[],
   allAgents: Record<string, AgentConfig>,
-  global = false
+  global = false,
+  prefetchedSourceDir?: string
 ): Promise<void> {
   let tempDir: string;
-  let cleanupFn: (dir: string) => Promise<void>;
+  let cleanupFn: ((dir: string) => Promise<void>) | null = null;
 
-  // 根据源类型选择下载方式
-  if (entry.sourceType === 'npm') {
-    const npmEntry = entry as any;
+  if (prefetchedSourceDir) {
+    // add -> internal install 复用同一个已下载目录；其生命周期由调用方统一管理
+    tempDir = prefetchedSourceDir;
+  } else if (entry.sourceType === 'npm') {
+    // 根据源类型选择下载方式
+    const npmEntry: NpmSkillEntry = entry;
     const resolvedVersion = isExactNpmVersion(entry.version!)
       ? entry.version!
       : await resolveNpmVersion(entry.source, entry.version!, npmEntry.registry);
@@ -166,13 +171,14 @@ async function installSkill(
     // Git 仓库：克隆到临时目录
     // 对于 tag 类型，使用 --branch 克隆指定 tag
     // 对于 branch 类型，使用 --branch 克隆指定分支，然后 checkout 到 commit
-    const refToClone = entry.mode === 'tag' ? (entry as any).tag : (entry as any).branch;
+    const gitEntry: GitSkillEntry = entry;
+    const refToClone = gitEntry.mode === 'tag' ? gitEntry.tag : gitEntry.branch;
     tempDir = await cloneRepo(entry.sourceUrl, refToClone);
     cleanupFn = gitCleanup;
 
     // 如果是 branch 类型，需要 checkout 到指定的 commit
-    if (entry.mode === 'branch') {
-      await checkoutCommit(tempDir, (entry as any).commit);
+    if (gitEntry.mode === 'branch') {
+      await checkoutCommit(tempDir, gitEntry.commit);
     }
   } else {
     throw new Error(`Source type ${entry.sourceType} not yet supported`);
@@ -211,8 +217,16 @@ async function installSkill(
       }
     }
   } finally {
-    await cleanupFn(tempDir);
+    if (cleanupFn) {
+      await cleanupFn(tempDir);
+    }
   }
+}
+
+function formatSkillSummary(skillNames: string[], maxVisible = 3): string {
+  const visibleNames = skillNames.slice(0, maxVisible);
+  const suffix = skillNames.length > maxVisible ? ', ...' : '';
+  return `${skillNames.length} skill${skillNames.length > 1 ? 's' : ''}: ${visibleNames.join(', ')}${suffix}`;
 }
 
 /**
@@ -222,7 +236,7 @@ async function installSkill(
  * @param skillsToInstall - 要安装的技能列表（如果提供，只安装这些技能）
  */
 export async function installCommand(options: InstallOptions = {}): Promise<void> {
-  const { internal = false, skills: skillsToInstall, global = false } = options;
+  const { internal = false, skills: skillsToInstall, global = false, prefetchedSourceDir } = options;
 
   // 跳过 intro 时不显示
   if (!internal) {
@@ -248,8 +262,11 @@ export async function installCommand(options: InstallOptions = {}): Promise<void
     return;
   }
 
+  const skillNames = skills.map(([name]) => name);
+  const skillSummary = formatSkillSummary(skillNames);
+
   if (!internal) {
-    p.log.message(`Installing ${skills.length} skill${skills.length > 1 ? 's' : ''}...`);
+    p.log.message(`Installing ${skillSummary}`);
   }
 
   // 2. 确定目标 agents
@@ -276,12 +293,12 @@ export async function installCommand(options: InstallOptions = {}): Promise<void
 
   // 4. 并行安装所有技能
   const spinner = p.spinner();
-  spinner.start(`Installing ${skills.length} skill${skills.length > 1 ? 's' : ''}...`);
+  spinner.start('Installing skills...');
 
   // 创建所有安装任务（处理错误，确保所有 Promise 都 resolve）
   const installTasks = skills.map(async ([name, entry]) => {
     try {
-      await installSkill(name, entry, targetAgents, agents, global);
+      await installSkill(name, entry, targetAgents, agents, global, prefetchedSourceDir);
       return { name, success: true };
     } catch (error) {
       return {
@@ -295,7 +312,7 @@ export async function installCommand(options: InstallOptions = {}): Promise<void
   // 并行执行所有安装任务
   const results = await Promise.all(installTasks);
 
-  spinner.stop(`Installed ${skills.length} skill${skills.length > 1 ? 's' : ''}`);
+  spinner.stop('Install complete');
 
   // 5. 显示详细结果列表
   if (!internal) {
@@ -326,6 +343,6 @@ export async function installCommand(options: InstallOptions = {}): Promise<void
 
   // 只在非 internal 模式下显示成功 outro
   if (!internal) {
-    p.outro(pc.green(`Successfully installed ${success.length} skill${success.length > 1 ? 's' : ''}!`));
+    p.outro(pc.green(`Installed ${success.length} skill${success.length > 1 ? 's' : ''}.`));
   }
 }

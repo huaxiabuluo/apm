@@ -106,6 +106,8 @@ const mockLogError = p.log.error as any;
 const mockLogSuccess = p.log.success as any;
 const mockConfirm = p.confirm as any;
 const mockSpinner = p.spinner as any;
+let mockSpinnerStart: any;
+let mockSpinnerStop: any;
 
 describe('addCommand', () => {
   const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -123,9 +125,11 @@ describe('addCommand', () => {
     mockLogError.mockImplementation(() => {});
     mockLogSuccess.mockImplementation(() => {});
 
+    mockSpinnerStart = vi.fn().mockReturnThis();
+    mockSpinnerStop = vi.fn().mockReturnThis();
     mockSpinner.mockReturnValue({
-      start: vi.fn().mockReturnThis(),
-      stop: vi.fn().mockReturnThis(),
+      start: mockSpinnerStart,
+      stop: mockSpinnerStop,
     });
 
     // 默认技能发现返回一个技能
@@ -178,6 +182,27 @@ describe('addCommand', () => {
 
       expect(mockLogMessage).toHaveBeenCalledWith(expect.stringContaining('https://github.com/owner/repo.git'));
     });
+
+    it('应该将预下载目录传给内部 install 并在安装后清理', async () => {
+      mockCloneRepo.mockResolvedValue('/tmp/repo');
+      mockConfirm.mockResolvedValue(true);
+
+      try {
+        await addCommand('github:owner/repo@tag:v1.0.0');
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockInstallCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          internal: true,
+          skills: ['test-skill'],
+          prefetchedSourceDir: '/tmp/repo',
+        })
+      );
+      expect(mockGitCleanup).toHaveBeenCalledWith('/tmp/repo');
+      expect(mockInstallCommand.mock.invocationCallOrder[0]).toBeLessThan(mockGitCleanup.mock.invocationCallOrder[0]);
+    });
   });
 
   describe('添加 GitHub 仓库（branch 模式）', () => {
@@ -227,6 +252,23 @@ describe('addCommand', () => {
       }
 
       expect(mockResolveNpmVersion).toHaveBeenCalledWith('test-package', '^1.0.0', undefined);
+    });
+
+    it('应该将 npm 请求版本和解析后版本合并为一行', async () => {
+      mockResolveNpmVersion.mockResolvedValue('1.2.3');
+      mockDownloadNpmPackage.mockResolvedValue('/tmp/repo');
+      mockConfirm.mockResolvedValue(true);
+
+      try {
+        await addCommand('npm:test-package@latest');
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockLogMessage).not.toHaveBeenCalledWith(expect.stringContaining('Version: latest'));
+      expect(mockSpinnerStop).toHaveBeenCalledWith(expect.stringContaining('Version:'));
+      expect(mockSpinnerStop).toHaveBeenCalledWith(expect.stringContaining('latest'));
+      expect(mockSpinnerStop).toHaveBeenCalledWith(expect.stringContaining('1.2.3'));
     });
 
     it('指定自定义 registry 时，应该在 Source 和持久化条目中使用该 registry', async () => {
@@ -435,8 +477,25 @@ describe('addCommand', () => {
     });
   });
 
+  describe('内部安装失败', () => {
+    it('应该输出原始错误并清理临时目录', async () => {
+      mockCloneRepo.mockResolvedValue('/tmp/repo');
+      mockInstallCommand.mockRejectedValue(new Error('install failed'));
+
+      try {
+        await addCommand('github:owner/repo', { yes: true });
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockLogError).toHaveBeenCalledWith('install failed');
+      expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('Some skills failed to install'));
+      expect(mockGitCleanup).toHaveBeenCalledWith('/tmp/repo');
+    });
+  });
+
   describe('未找到技能', () => {
-    it('应该显示错误并退出', async () => {
+    it('Git 源应该显示仓库错误并退出', async () => {
       mockDiscoverSkills.mockResolvedValue([]);
       mockCloneRepo.mockResolvedValue('/tmp/repo');
 
@@ -447,6 +506,20 @@ describe('addCommand', () => {
       }
 
       expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('No valid SKILL.md files found'));
+    });
+
+    it('NPM 源应该显示包错误并退出', async () => {
+      mockDiscoverSkills.mockResolvedValue([]);
+      mockResolveNpmVersion.mockResolvedValue('1.0.0');
+      mockDownloadNpmPackage.mockResolvedValue('/tmp/repo');
+
+      try {
+        await addCommand('npm:test-package');
+      } catch (e) {
+        // expected process.exit(1)
+      }
+
+      expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('Package does not contain any valid SKILL.md files'));
     });
   });
 });
