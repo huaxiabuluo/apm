@@ -21,8 +21,8 @@ describe('agents helpers', () => {
           skillsDir: '.agents/skills',
           globalSkillsDir: '~/.claude/skills',
         },
-        true
-      )
+        true,
+      ),
     ).toBe(join(homedir(), '.claude', 'skills'));
   });
 
@@ -63,7 +63,7 @@ describe('agents helpers', () => {
         displayName: 'Claude Code',
         skillsDir: '.claude/skills',
         globalSkillsDir: '~/.claude/skills',
-      })
+      }),
     ).toEqual({
       name: 'claude-code',
       displayName: 'Claude Code',

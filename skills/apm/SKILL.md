@@ -72,6 +72,7 @@ npx @ai-dancer/apm add git:git@github.com:vercel-labs/agent-skills.git
 
 # Multi-skill repository
 npx @ai-dancer/apm add github:anthropics/skills --list
+npx @ai-dancer/apm add github:anthropics/skills --no-save
 npx @ai-dancer/apm add github:anthropics/skills --skill "*"
 npx @ai-dancer/apm add github:anthropics/skills --skill frontend-design --skill skill-creator
 ```
@@ -139,4 +140,6 @@ APM looks for `SKILL.md` in these locations:
 - For NPM examples with a custom registry, keep the README’s quoted form
 - When config needs to change, update `.agents/apm.json` first, then run `npx @ai-dancer/apm install`
 - When the user only wants to see available skills, prefer `npx @ai-dancer/apm add <source> --list`
+- When the user wants to install a skill without recording it in `apm.json`, use `npx @ai-dancer/apm add <source> --no-save`
+- Explain that `--no-save` installs immediately but is unmanaged afterward: `apm list`, `apm install`, `apm update`, and `apm remove` will not manage that skill until it is added normally
 - When the user wants reproducible versions, prefer Git tags and explicit NPM versions

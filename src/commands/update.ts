@@ -178,8 +178,8 @@ export async function updateCommand(options: UpdateOptions = {}): Promise<void> 
         const reason = result.error
           ? pc.red(result.error)
           : result.warning
-          ? pc.yellow(result.warning)
-          : pc.dim('Already up to date');
+            ? pc.yellow(result.warning)
+            : pc.dim('Already up to date');
         p.log.message(`  ${pc.cyan(name)}: ${reason}`);
       }
     }
@@ -220,7 +220,7 @@ export async function updateCommand(options: UpdateOptions = {}): Promise<void> 
   for (const result of updateableSkills) {
     if (skillsToUpdate.includes(result.name)) {
       p.log.message(
-        `  ${pc.cyan(result.name)}: ${pc.yellow(result.current.version)} → ${pc.green(result.latest!.version)}`
+        `  ${pc.cyan(result.name)}: ${pc.yellow(result.current.version)} → ${pc.green(result.latest!.version)}`,
       );
     }
   }

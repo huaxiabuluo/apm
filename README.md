@@ -204,16 +204,27 @@ apm update -g
 
 ### Common Commands
 
-| Command                                                     | Description                                          |
-| ----------------------------------------------------------- | ---------------------------------------------------- |
-| `apm init [-g] [--agent <name>...]`                         | Initialize project or global configuration           |
+| Command                                                     | Description                                                           |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| `apm init [-g] [--agent <name>...]`                         | Initialize project or global configuration                            |
 | `apm add <source> [options]`                                | Add skills to `apm.json` and install them (`--no-save` installs only) |
-| `apm install [-g] [--confirm]`                              | Reinstall skills from `apm.json`                     |
-| `apm list [-g] [--verbose]`                                 | List configured skills and installation status       |
-| `apm remove <skill-name>... [-g] [--yes]`                   | Remove skills from config and delete installed files |
-| `apm check [skill-name...] [-g]`                            | Check for updates                                    |
-| `apm update [skill-name...] [-g] [--select] [--no-install]` | Update skills                                        |
-| `apm help` / `apm version`                                  | Show help or version information                     |
+| `apm install [-g] [--confirm]`                              | Reinstall skills from `apm.json`                                      |
+| `apm list [-g] [--verbose]`                                 | List configured skills and installation status                        |
+| `apm remove <skill-name>... [-g] [--yes]`                   | Remove skills from config and delete installed files                  |
+| `apm check [skill-name...] [-g]`                            | Check for updates                                                     |
+| `apm update [skill-name...] [-g] [--select] [--no-install]` | Update skills                                                         |
+| `apm help` / `apm version`                                  | Show help or version information                                      |
+
+### `--no-save` Behavior
+
+`apm add <source> --no-save` installs the selected skills into the target agent directories, but does not write them to `apm.json`.
+
+This is similar to `npm install --no-save`:
+
+- The skill is installed immediately
+- The skill is not recorded in `apm.json`
+- `apm list`, `apm install`, `apm update`, and `apm remove` do not manage that skill unless it is later added normally
+- `apm add --no-save` still downloads the source package or repository in order to discover and install skills
 
 ## `apm.json`
 

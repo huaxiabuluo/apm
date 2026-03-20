@@ -41,6 +41,31 @@ describe('apm add - Git 版本语法', () => {
       expect(output).toMatch(/版本需要显式前缀|Command failed/);
     });
 
+    it('无效的版本格式应该报错', () => {
+      const cmd = `cd ${testDir} && node ${cliPath} add github:anthropic/ai-skills@invalid --list 2>&1`;
+      let output: string;
+      try {
+        output = execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
+      } catch (error: any) {
+        output = error.stderr || error.stdout || error.message;
+      }
+      expect(output).toMatch(/版本需要显式前缀|Command failed/);
+    });
+
+    it('空的 source 应该报错', () => {
+      const cmd = `cd ${testDir} && node ${cliPath} add github:@tag:v1.0.0 --list 2>&1`;
+      let output: string;
+      try {
+        output = execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
+      } catch (error: any) {
+        output = error.stderr || error.stdout || error.message;
+      }
+      expect(output).toBeTruthy();
+      expect(output.length).toBeGreaterThan(0);
+    });
+  });
+
+  describeNetwork('远程版本解析验证', () => {
     it('极简模式应该成功解析（不需要实际克隆）', () => {
       const cmd = `cd ${testDir} && node ${cliPath} add github:anthropic/ai-skills --list 2>&1`;
       let output: string;
@@ -76,9 +101,7 @@ describe('apm add - Git 版本语法', () => {
       expect(output).toBeTruthy();
       expect(output.length).toBeGreaterThan(0);
     });
-  });
 
-  describeNetwork('--list 功能', () => {
     it('--list 应该显示可用的 skills 列表', () => {
       const cmd = `cd ${testDir} && node ${cliPath} add github:vercel-labs/agent-browser --list 2>&1`;
       let output: string;
@@ -114,31 +137,6 @@ describe('apm add - Git 版本语法', () => {
 
       const afterContent = await fs.readFile(apmJsonPath, 'utf-8');
       expect(afterContent).toEqual(beforeContent);
-    });
-  });
-
-  describe('错误处理', () => {
-    it('无效的版本格式应该报错', () => {
-      const cmd = `cd ${testDir} && node ${cliPath} add github:anthropic/ai-skills@invalid --list 2>&1`;
-      let output: string;
-      try {
-        output = execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
-      } catch (error: any) {
-        output = error.stderr || error.stdout || error.message;
-      }
-      expect(output).toMatch(/版本需要显式前缀|Command failed/);
-    });
-
-    it('空的 source 应该报错', () => {
-      const cmd = `cd ${testDir} && node ${cliPath} add github:@tag:v1.0.0 --list 2>&1`;
-      let output: string;
-      try {
-        output = execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
-      } catch (error: any) {
-        output = error.stderr || error.stdout || error.message;
-      }
-      expect(output).toBeTruthy();
-      expect(output.length).toBeGreaterThan(0);
     });
   });
 });

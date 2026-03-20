@@ -1,7 +1,7 @@
 {
   "name": "@ai-dancer/apm",
   "license": "MIT",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Agent Package Management - Universal package manager for AI agent skills",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/huaxiabuluo/apm/issues"
   },
-  "author": "ai-dancer",
+  "author": "huaxiabuluo <huaxiabuluo@hotmail.com>",
   "type": "module",
   "packageManager": "pnpm@10.28.1",
   "module": "dist/index.js",
@@ -91,7 +91,7 @@
     "jest-environment-jsdom": "^29.4.3",
     "lint-staged": "^13.0.0",
     "obuild": "^0.4.22",
-    "prettier": "^2.0.0",
+    "prettier": "^3.0.0",
     "typescript-eslint": "^8.57.0",
     "vitest": "^4.0.17"
   },

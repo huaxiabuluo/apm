@@ -29,4 +29,30 @@ describe('parseSource', () => {
       version: 'latest',
     });
   });
+
+  it('parses explicit github tag syntax', () => {
+    expect(parseSource('github:anthropic/ai-skills@tag:v1.0.0')).toMatchObject({
+      sourceType: 'github',
+      source: 'anthropic/ai-skills',
+      sourceUrl: 'https://github.com/anthropic/ai-skills.git',
+      mode: 'tag',
+      branch: 'v1.0.0',
+      version: 'v1.0.0',
+    });
+  });
+
+  it('parses explicit github branch syntax', () => {
+    expect(parseSource('github:anthropic/ai-skills@branch:main')).toMatchObject({
+      sourceType: 'github',
+      source: 'anthropic/ai-skills',
+      sourceUrl: 'https://github.com/anthropic/ai-skills.git',
+      mode: 'branch',
+      branch: 'main',
+      version: 'main',
+    });
+  });
+
+  it('rejects github versions without an explicit prefix', () => {
+    expect(() => parseSource('github:anthropic/ai-skills@v1.0.0')).toThrow(/版本需要显式前缀/);
+  });
 });

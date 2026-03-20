@@ -151,7 +151,7 @@ async function installSkill(
   targetAgents: string[],
   allAgents: Record<string, AgentConfig>,
   global = false,
-  prefetchedSourceDir?: string
+  prefetchedSourceDir?: string,
 ): Promise<void> {
   let tempDir: string;
   let cleanupFn: ((dir: string) => Promise<void>) | null = null;
@@ -236,13 +236,7 @@ function formatSkillSummary(skillNames: string[], maxVisible = 3): string {
  * @param skillsToInstall - 要安装的技能列表（如果提供，只安装这些技能）
  */
 export async function installCommand(options: InstallOptions = {}): Promise<void> {
-  const {
-    internal = false,
-    skills: skillsToInstall,
-    global = false,
-    prefetchedSourceDir,
-    skillEntries,
-  } = options;
+  const { internal = false, skills: skillsToInstall, global = false, prefetchedSourceDir, skillEntries } = options;
 
   // 跳过 intro 时不显示
   if (!internal) {

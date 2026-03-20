@@ -90,7 +90,7 @@ async function findSkillDirs(dir: string, depth = 0, maxDepth = 5): Promise<stri
     const subDirResults = await Promise.all(
       entries
         .filter((entry) => entry.isDirectory() && !SKIP_DIRECTORIES.has(entry.name))
-        .map((entry) => findSkillDirs(join(dir, entry.name), depth + 1, maxDepth))
+        .map((entry) => findSkillDirs(join(dir, entry.name), depth + 1, maxDepth)),
     );
 
     return [...currentDir, ...subDirResults.flat()];

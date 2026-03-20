@@ -140,7 +140,7 @@ export function toPersistedAgentConfig(agent: AgentConfigEntry): Omit<AgentConfi
  */
 export function resolveAgentSkillsDir(
   agent: Pick<AgentConfigEntry, 'skillsDir' | 'globalSkillsDir'>,
-  global = false
+  global = false,
 ): string {
   return global
     ? agent.globalSkillsDir

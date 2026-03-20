@@ -219,16 +219,16 @@ apm update -g
 
 ### 常用命令
 
-| 命令                                                        | 说明                             |
-| ----------------------------------------------------------- | -------------------------------- |
-| `apm init [-g] [--agent <name>...]`                         | 初始化项目或全局配置             |
+| 命令                                                        | 说明                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `apm init [-g] [--agent <name>...]`                         | 初始化项目或全局配置                                         |
 | `apm add <source> [options]`                                | 添加技能到 `apm.json` 并自动安装（`--no-save` 仅安装不落盘） |
-| `apm install [-g] [--confirm]`                              | 重新安装 `apm.json` 中的技能     |
-| `apm list [-g] [--verbose]`                                 | 列出已配置技能和安装状态         |
-| `apm remove <skill-name>... [-g] [--yes]`                   | 移除技能配置和已安装文件         |
-| `apm check [skill-name...] [-g]`                            | 检查更新                         |
-| `apm update [skill-name...] [-g] [--select] [--no-install]` | 更新技能                         |
-| `apm help` / `apm version`                                  | 查看帮助或版本                   |
+| `apm install [-g] [--confirm]`                              | 重新安装 `apm.json` 中的技能                                 |
+| `apm list [-g] [--verbose]`                                 | 列出已配置技能和安装状态                                     |
+| `apm remove <skill-name>... [-g] [--yes]`                   | 移除技能配置和已安装文件                                     |
+| `apm check [skill-name...] [-g]`                            | 检查更新                                                     |
+| `apm update [skill-name...] [-g] [--select] [--no-install]` | 更新技能                                                     |
+| `apm help` / `apm version`                                  | 查看帮助或版本                                               |
 
 ## apm.json 配置
 

@@ -198,7 +198,7 @@ describe('addCommand', () => {
           internal: true,
           skills: ['test-skill'],
           prefetchedSourceDir: '/tmp/repo',
-        })
+        }),
       );
       expect(mockGitCleanup).toHaveBeenCalledWith('/tmp/repo');
       expect(mockInstallCommand.mock.invocationCallOrder[0]).toBeLessThan(mockGitCleanup.mock.invocationCallOrder[0]);
@@ -284,7 +284,7 @@ describe('addCommand', () => {
 
       expect(mockLogMessage).toHaveBeenCalledWith(expect.stringContaining('Source:'));
       expect(mockLogMessage).toHaveBeenCalledWith(
-        expect.stringContaining('https://registry.npmmirror.com/@ai-dancer/apm')
+        expect.stringContaining('https://registry.npmmirror.com/@ai-dancer/apm'),
       );
       expect(mockLogMessage).toHaveBeenCalledWith(expect.stringContaining('Registry:'));
       expect(mockAddSkill).toHaveBeenCalledWith(
@@ -296,7 +296,7 @@ describe('addCommand', () => {
           registry: 'https://registry.npmmirror.com/',
           version: '1.2.3',
         }),
-        false
+        false,
       );
     });
   });
@@ -431,10 +431,10 @@ describe('addCommand', () => {
               source: 'owner/repo',
             }),
           }),
-        })
+        }),
       );
       expect(mockLogInfo).toHaveBeenCalledWith(
-        expect.stringContaining('This skill is not managed by apm ls/install/update/remove')
+        expect.stringContaining('This skill is not managed by apm ls/install/update/remove'),
       );
     });
   });
@@ -564,7 +564,9 @@ describe('addCommand', () => {
         // expected process.exit(1)
       }
 
-      expect(mockOutro).toHaveBeenCalledWith(expect.stringContaining('Package does not contain any valid SKILL.md files'));
+      expect(mockOutro).toHaveBeenCalledWith(
+        expect.stringContaining('Package does not contain any valid SKILL.md files'),
+      );
     });
   });
 });

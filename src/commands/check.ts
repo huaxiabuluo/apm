@@ -159,7 +159,7 @@ async function checkGitBranchSkill(name: string, entry: BranchSkillEntry): Promi
  */
 export async function checkSkillVersion(
   name: string,
-  entry: NpmSkillEntry | TagSkillEntry | BranchSkillEntry
+  entry: NpmSkillEntry | TagSkillEntry | BranchSkillEntry,
 ): Promise<VersionCheckResult> {
   const sourceType = entry.sourceType;
 

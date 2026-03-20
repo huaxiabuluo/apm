@@ -155,7 +155,7 @@ export function resolveVersionRange(versionRange: string, availableVersions: str
 export async function resolveNpmVersion(
   packageName: string,
   versionRange: string = '',
-  registry?: string
+  registry?: string,
 ): Promise<string> {
   // 使用提供的 registry 或默认 npm registry
   const baseUrl = registry || 'https://registry.npmjs.org';

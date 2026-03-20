@@ -225,7 +225,7 @@ export async function listCommand(options: ListOptions = {}): Promise<void> {
         table.push([
           {
             content: `${pc.dim('Type:')} ${pc.cyan('tag')} | ${pc.dim('Tag:')} ${pc.yellow(
-              String((entry as any).tag)
+              String((entry as any).tag),
             )}`,
             colSpan: 4,
           },
@@ -237,7 +237,7 @@ export async function listCommand(options: ListOptions = {}): Promise<void> {
         table.push([
           {
             content: `${pc.dim('Type:')} ${pc.cyan('branch')} | ${pc.dim('Branch:')} ${pc.yellow(
-              String((entry as any).branch)
+              String((entry as any).branch),
             )} | ${pc.dim('Commit:')} ${pc.dim(String((entry as any).commit))}`,
             colSpan: 4,
           },
@@ -249,7 +249,7 @@ export async function listCommand(options: ListOptions = {}): Promise<void> {
         table.push([
           {
             content: `${pc.dim('Type:')} ${pc.cyan(entry.sourceType)} | ${pc.dim('Version:')} ${pc.yellow(
-              String(entry.version)
+              String(entry.version),
             )}`,
             colSpan: 4,
           },

@@ -77,7 +77,7 @@ function showHelp() {
   console.log(`  ${pc.dim('npm:@anthropic/skills@1.2.3')}      (version)`);
   console.log(`  ${pc.dim("'npm:@anthropic/skills?registry=https://registry.example.com'")}  (custom registry)`);
   console.log(
-    `  ${pc.dim("'npm:@anthropic/skills@1.2.3?registry=https://registry.example.com'")}  (custom registry + version)`
+    `  ${pc.dim("'npm:@anthropic/skills@1.2.3?registry=https://registry.example.com'")}  (custom registry + version)`,
   );
   console.log();
   console.log(pc.bold('Global Options:'));

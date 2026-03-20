@@ -195,7 +195,7 @@ const publishTag = options.tag || options.preid;
 const publishVersion =
   options.version ||
   [options.baseVersion, options.preid, options.commit || getGitShortSha(), options.date || getCurrentUtcDate()].join(
-    '-'
+    '-',
   );
 
 validateSemver(options.baseVersion);

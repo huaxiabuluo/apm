@@ -66,10 +66,7 @@ function formatResolvedNpmVersionMessage(requestedVersion: string | undefined, r
   return `Version: ${pc.yellow(requested)} ${pc.dim('->')} ${pc.yellow(resolvedVersion)}`;
 }
 
-async function cleanupTempDir(
-  sourceType: 'github' | 'git' | 'npm' | 'local',
-  tempDir: string | null
-): Promise<void> {
+async function cleanupTempDir(sourceType: 'github' | 'git' | 'npm' | 'local', tempDir: string | null): Promise<void> {
   if (!tempDir || sourceType === 'local') {
     return;
   }
@@ -230,7 +227,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       p.log.info(
         `Selected ${selectedSkills.length} skill${selectedSkills.length !== 1 ? 's' : ''}: ${selectedSkills
           .map((s) => pc.cyan(s.name))
-          .join(', ')}`
+          .join(', ')}`,
       );
     } else if (discoveredSkills.length === 1) {
       // 只有一个技能，自动选择
@@ -373,9 +370,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       const location = global ? `~/.agents/apm.json` : `.agents/apm.json`;
       if (noSave) {
         p.log.success(
-          pc.green(
-            `Installing ${success.length} skill${success.length > 1 ? 's' : ''} without saving to ${location}`
-          )
+          pc.green(`Installing ${success.length} skill${success.length > 1 ? 's' : ''} without saving to ${location}`),
         );
       } else {
         p.log.success(pc.green(`Added ${success.length} skill${success.length > 1 ? 's' : ''} to ${location}`));
@@ -412,7 +407,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
 
         if (noSave) {
           p.log.info(
-            pc.dim('Installed without saving to apm.json. This skill is not managed by apm ls/install/update/remove.')
+            pc.dim('Installed without saving to apm.json. This skill is not managed by apm ls/install/update/remove.'),
           );
         }
       } catch (error) {

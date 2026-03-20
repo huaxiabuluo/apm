@@ -96,13 +96,13 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     console.log(pc.dim('│'));
     console.log(
       `${pc.dim('│')}  ${pc.dim('─')} ${pc.bold('Universal (.agents/skills) ── always included')} ${pc.dim(
-        '─'.repeat(20)
-      )}`
+        '─'.repeat(20),
+      )}`,
     );
     console.log(
       `${pc.dim('│')}    ${pc.dim('Supported Agents:')} ${pc.cyan(
-        'Amp, Cline, Codex, Cursor, Gemini CLI, GitHub Copilot, Kimi Code CLI, OpenCode...'
-      )}`
+        'Amp, Cline, Codex, Cursor, Gemini CLI, GitHub Copilot, Kimi Code CLI, OpenCode...',
+      )}`,
     );
     console.log(pc.dim('│'));
     console.log(`${pc.dim('│')}  ${pc.dim('─')} ${pc.bold('Additional agents')} ${pc.dim('─'.repeat(29))}`);
@@ -133,7 +133,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
       p.log.success(
         `Enabled ${selectedAgents.length} agent${selectedAgents.length > 1 ? 's' : ''}: ${selectedAgents
           .map((a) => pc.cyan(a.displayName))
-          .join(', ')}`
+          .join(', ')}`,
       );
     } else {
       p.log.info('No additional agents selected');
@@ -170,8 +170,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   p.outro(
     pc.green(
       `Successfully initialized APM! Run ${pc.yellow('apm install')} to install built-in skills, or ${pc.yellow(
-        'apm add <source>'
-      )} to add more skills.`
-    )
+        'apm add <source>',
+      )} to add more skills.`,
+    ),
   );
 }

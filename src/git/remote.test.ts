@@ -117,7 +117,7 @@ def456\trefs/tags/v1.0.0^{}
     mockListRemote.mockRejectedValue(new Error('Network error'));
 
     await expect(getRemoteTags('https://github.com/example/repo.git')).rejects.toThrow(
-      'Failed to get remote tags from https://github.com/example/repo.git: Network error'
+      'Failed to get remote tags from https://github.com/example/repo.git: Network error',
     );
   });
 });
@@ -140,13 +140,13 @@ describe('getRemoteBranchCommit', () => {
 
   it('should throw error for empty branch name', async () => {
     await expect(getRemoteBranchCommit('https://github.com/example/repo.git', '')).rejects.toThrow(
-      'Branch name must be a non-empty string'
+      'Branch name must be a non-empty string',
     );
   });
 
   it('should throw error for invalid branch name', async () => {
     await expect(getRemoteBranchCommit('https://github.com/example/repo.git', '   ')).rejects.toThrow(
-      'Branch name must be a non-empty string'
+      'Branch name must be a non-empty string',
     );
   });
 
@@ -154,7 +154,7 @@ describe('getRemoteBranchCommit', () => {
     mockListRemote.mockResolvedValue('');
 
     await expect(getRemoteBranchCommit('https://github.com/example/repo.git', 'nonexistent')).rejects.toThrow(
-      "Branch 'nonexistent' not found in remote repository"
+      "Branch 'nonexistent' not found in remote repository",
     );
   });
 
@@ -162,7 +162,7 @@ describe('getRemoteBranchCommit', () => {
     mockListRemote.mockRejectedValue(new Error('Network error'));
 
     await expect(getRemoteBranchCommit('https://github.com/example/repo.git', 'master')).rejects.toThrow(
-      'Failed to get remote branch commit for master from https://github.com/example/repo.git: Network error'
+      'Failed to get remote branch commit for master from https://github.com/example/repo.git: Network error',
     );
   });
 });

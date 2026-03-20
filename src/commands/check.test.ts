@@ -286,7 +286,7 @@ describe('checkSkillVersion', () => {
 
       mockIsExactNpmVersion.mockReturnValue(false);
       mockResolveNpmVersion.mockImplementation((source: string, version?: string) =>
-        Promise.resolve(version === 'latest' ? '1.2.3' : '1.2.3')
+        Promise.resolve(version === 'latest' ? '1.2.3' : '1.2.3'),
       );
 
       const result = await checkSkillVersion('apm', entry);

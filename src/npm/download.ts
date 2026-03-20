@@ -34,7 +34,7 @@ export async function cleanup(dir: string): Promise<void> {
 function buildTarballUrl(
   packageName: string,
   version: string,
-  registry: string = 'https://registry.npmjs.org'
+  registry: string = 'https://registry.npmjs.org',
 ): string {
   // 提取包名（对于 scoped 包，去掉 @scope/ 部分）
   let tarballName: string;

@@ -107,7 +107,7 @@ export function parseVersionWithPrefix(version: string | undefined): {
   • Branch: branch:feat-hello
   • 默认:   不提供版本参数使用默认分支
 
-当前输入: ${version}`
+当前输入: ${version}`,
     );
   }
 

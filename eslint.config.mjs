@@ -45,5 +45,5 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unsafe-declaration-merging': 'off',
     },
-  }
+  },
 );

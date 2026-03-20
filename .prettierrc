@@ -4,14 +4,19 @@
   "semi": true,
   "singleQuote": true,
   "bracketSpacing": true,
+  "trailingComma": "none",
   "overrides": [
     {
       "files": [".prettierrc", ".babelrc", ".eslintrc"],
       "options": { "parser": "json" }
     },
     {
-      "files": ["*.js", ".jsx", ".ts", ".tsx"],
-      "options": { "parser": "typescript" }
+      "files": ["*.md"],
+      "options": { "embeddedLanguageFormatting": "off" }
+    },
+    {
+      "files": ["*.js", "*.jsx", "*.mjs", "*.cjs", "*.ts", "*.tsx", "*.mts", "*.cts"],
+      "options": { "trailingComma": "all" }
     }
   ]
 }

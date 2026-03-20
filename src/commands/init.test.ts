@@ -108,7 +108,7 @@ describe('initCommand', () => {
     expect(mockConfirm).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.stringContaining('apm.json already exists'),
-      })
+      }),
     );
     expect(mockCancel).toHaveBeenCalledWith('Init cancelled');
     expect(mockWriteFile).not.toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('initCommand', () => {
     expect(mockMultiselect).toHaveBeenCalledWith(
       expect.objectContaining({
         required: false,
-      })
+      }),
     );
 
     expect(mockWriteFile).toHaveBeenCalledTimes(1);
