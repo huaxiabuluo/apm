@@ -118,6 +118,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
       message: 'Which agents do you want to enable?',
       options: agentChoices,
       initialValues: ['claude-code'], // 默认勾选 claude-code
+      required: false,
     });
 
     if (isCancelled(selectedAgentNames)) {
@@ -142,11 +143,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   // 构建 apm.json 内容
   const apmJsonContent = {
     version: APM_JSON_VERSION,
-    ...(selectedAgents.length > 0
-      ? {
-          additionalAgents: selectedAgents.map(toPersistedAgentConfig),
-        }
-      : {}),
+    // Persist the explicit init choice. An empty array means Universal only.
+    additionalAgents: selectedAgents.map(toPersistedAgentConfig),
     skills: BUILTIN_SKILLS,
   };
 

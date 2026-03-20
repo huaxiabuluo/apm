@@ -49,6 +49,7 @@ const mockLogMessage = p.log.message as any;
 const mockLogError = p.log.error as any;
 const mockLogSuccess = p.log.success as any;
 const mockOutro = p.outro as any;
+const mockMultiselect = p.multiselect as any;
 
 describe('initCommand', () => {
   const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -111,5 +112,34 @@ describe('initCommand', () => {
     );
     expect(mockCancel).toHaveBeenCalledWith('Init cancelled');
     expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('should persist empty additionalAgents when no agent is selected interactively', async () => {
+    mockMultiselect.mockResolvedValue([]);
+
+    await initCommand();
+
+    expect(mockMultiselect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        required: false,
+      })
+    );
+
+    expect(mockWriteFile).toHaveBeenCalledTimes(1);
+
+    const [, content] = mockWriteFile.mock.calls[0];
+    expect(JSON.parse(content)).toEqual({
+      version: 1,
+      additionalAgents: [],
+      skills: {
+        apm: {
+          source: '@ai-dancer/apm',
+          sourceType: 'npm',
+          sourceUrl: 'https://registry.npmjs.org/@ai-dancer/apm',
+          version: 'latest',
+          skillPath: 'skills/apm/SKILL.md',
+        },
+      },
+    });
   });
 });
