@@ -181,6 +181,9 @@ apm add git:git@github.com:vercel-labs/agent-skills.git@branch:main
 # List skills without installing
 apm add github:anthropics/skills --list
 
+# Install skills without saving to apm.json
+apm add github:anthropics/skills --no-save
+
 # Install all or selected skills from a multi-skill repository
 apm add github:anthropics/skills --skill "*"
 apm add github:anthropics/skills --skill frontend-design --skill skill-creator
@@ -204,7 +207,7 @@ apm update -g
 | Command                                                     | Description                                          |
 | ----------------------------------------------------------- | ---------------------------------------------------- |
 | `apm init [-g] [--agent <name>...]`                         | Initialize project or global configuration           |
-| `apm add <source> [options]`                                | Add skills to `apm.json` and install them            |
+| `apm add <source> [options]`                                | Add skills to `apm.json` and install them (`--no-save` installs only) |
 | `apm install [-g] [--confirm]`                              | Reinstall skills from `apm.json`                     |
 | `apm list [-g] [--verbose]`                                 | List configured skills and installation status       |
 | `apm remove <skill-name>... [-g] [--yes]`                   | Remove skills from config and delete installed files |

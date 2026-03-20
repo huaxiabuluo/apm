@@ -90,6 +90,7 @@ function showHelp() {
   console.log(`  ${pc.yellow('add   -y, --yes')}         Skip confirmation prompts`);
   console.log(`  ${pc.yellow('add   -s, --skill')}       Select specific skills to install`);
   console.log(`  ${pc.yellow('add   -l, --list')}        List available skills without installing`);
+  console.log(`  ${pc.yellow('add   --no-save')}         Install skills without saving to apm.json`);
   console.log(`  ${pc.yellow('install --confirm')}       Confirm before installing`);
   console.log(`  ${pc.yellow('list  -v, --verbose')}     Show detailed information`);
   console.log(`  ${pc.yellow('remove -y, --yes')}        Skip confirmation prompts`);
@@ -104,6 +105,7 @@ function showHelp() {
   console.log(`  ${pc.dim('apm add github:anthropics/skills --skill frontend-design --skill skill-creator')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills --skill "*"')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills --list')}`);
+  console.log(`  ${pc.dim('apm add github:anthropics/skills --no-save')}`);
   console.log(`  ${pc.dim('apm add -g github:anthropics/skills')}`);
   console.log(`  ${pc.dim("apm add 'npm:@ai-dancer/apm?registry=https://registry.npmmirror.com/'")}`);
   console.log(`  ${pc.dim('apm install')}`);
@@ -145,6 +147,8 @@ function parseAddOptions(args: string[]): AddOptions {
       options.yes = true;
     } else if (arg === '-l' || arg === '--list') {
       options.list = true;
+    } else if (arg === '--no-save') {
+      options.noSave = true;
     } else if (arg === '-g' || arg === '--global') {
       options.global = true;
     } else if (arg === '-s' || arg === '--skill') {

@@ -164,6 +164,8 @@ export interface AddOptions {
   skill?: string[];
   /** 列出可用技能但不安装 */
   list?: boolean;
+  /** 只安装不写入 apm.json */
+  noSave?: boolean;
   /** 全局安装模式 */
   global?: boolean;
 }
@@ -189,6 +191,9 @@ export interface InstallOptions {
 
   /** 预下载的源目录（内部复用 add 命令下载结果，调用方负责在并行安装全部完成前保持其有效） */
   prefetchedSourceDir?: string;
+
+  /** 直接提供待安装的技能条目（内部使用，可绕过 apm.json 的 skills 字段） */
+  skillEntries?: Record<string, SkillEntry>;
 }
 
 /**

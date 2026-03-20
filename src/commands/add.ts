@@ -85,7 +85,7 @@ async function cleanupTempDir(
  * @param options - 命令选项
  */
 export async function addCommand(sourceInput: string, options: AddOptions = {}): Promise<void> {
-  const { global = false } = options;
+  const { global = false, noSave = false } = options;
 
   showLogo();
   p.intro(pc.bgCyan(pc.black(' apm ')));
@@ -263,14 +263,19 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       selectedSkills = selected as Skill[];
     }
 
-    // 7. 为每个技能构建 entry 并添加到 apm.json
+    if (!tempDir) {
+      throw new Error('Temporary source directory is missing before building skill entries');
+    }
+
+    // 7. 为每个技能构建 entry，并按需添加到 apm.json
     const currentSkills = await readSkillsJson(global);
     const results: Array<{ skill: Skill; success: boolean; error?: string }> = [];
+    const skillEntries: Record<string, SkillEntry> = {};
 
     for (const skill of selectedSkills) {
       try {
         // 计算相对路径
-        let relativePath = skill.path.replace(tempDir!, '');
+        let relativePath = skill.path.replace(tempDir, '');
 
         // 移除可能存在的前导斜杠（兼容 source-parser.ts 中 local 类型的处理）
         if (relativePath.startsWith('//')) {
@@ -334,7 +339,9 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
         if (skill.name in currentSkills.skills) {
           if (!options.yes) {
             const overwrite = await p.confirm({
-              message: `Skill "${skill.name}" already exists. Overwrite?`,
+              message: noSave
+                ? `Skill "${skill.name}" already exists in apm.json. Install without saving?`
+                : `Skill "${skill.name}" already exists. Overwrite?`,
             });
 
             if (isCancelled(overwrite) || !overwrite) {
@@ -344,7 +351,10 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
           }
         }
 
-        await addSkill(skill.name, entry, global);
+        if (!noSave) {
+          await addSkill(skill.name, entry, global);
+        }
+        skillEntries[skill.name] = entry;
         results.push({ skill, success: true });
       } catch (error) {
         results.push({
@@ -361,7 +371,15 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
 
     if (success.length > 0) {
       const location = global ? `~/.agents/apm.json` : `.agents/apm.json`;
-      p.log.success(pc.green(`Added ${success.length} skill${success.length > 1 ? 's' : ''} to ${location}`));
+      if (noSave) {
+        p.log.success(
+          pc.green(
+            `Installing ${success.length} skill${success.length > 1 ? 's' : ''} without saving to ${location}`
+          )
+        );
+      } else {
+        p.log.success(pc.green(`Added ${success.length} skill${success.length > 1 ? 's' : ''} to ${location}`));
+      }
       for (const r of success) {
         p.log.message(`  ${pc.green('✓')} ${r.skill.name}`);
       }
@@ -377,14 +395,9 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
     // 自动安装技能
     if (success.length > 0) {
       const addedNames = success.map((r) => r.skill.name);
-      if (!tempDir) {
-        throw new Error('Temporary source directory is missing before install');
-      }
 
       try {
-        // 从 apm.json 读取 agents 配置
-        const currentSkillsJson = await readSkillsJson(global);
-        const additionalAgents = currentSkillsJson.additionalAgents || getDefaultAdditionalAgents();
+        const additionalAgents = currentSkills.additionalAgents || getDefaultAdditionalAgents();
         const targetAgents = ['universal', ...additionalAgents.map((a) => a.name)];
 
         // 调用 installCommand（internal 模式，不显示 intro）
@@ -394,7 +407,14 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
           agents: targetAgents,
           global,
           prefetchedSourceDir: tempDir,
+          skillEntries: noSave ? skillEntries : undefined,
         });
+
+        if (noSave) {
+          p.log.info(
+            pc.dim('Installed without saving to apm.json. This skill is not managed by apm ls/install/update/remove.')
+          );
+        }
       } catch (error) {
         // 安装失败不影响添加成功
         p.log.error(error instanceof Error ? error.message : String(error));

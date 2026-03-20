@@ -268,6 +268,31 @@ describe('installCommand', () => {
     });
   });
 
+  describe('直接提供 skillEntries', () => {
+    it('应该在不依赖 apm.json skills 的情况下安装传入的技能', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {},
+      });
+      mockDownloadNpmPackage.mockResolvedValue('/tmp/no-save-skill');
+
+      await installCommand({
+        internal: true,
+        skillEntries: {
+          'no-save-skill': {
+            sourceType: 'npm',
+            source: 'test-package',
+            sourceUrl: 'https://registry.npmjs.org/test-package',
+            version: '1.0.0',
+            skillPath: 'SKILL.md',
+          },
+        },
+      });
+
+      expect(mockDownloadNpmPackage).toHaveBeenCalledWith('test-package', '1.0.0', undefined);
+    });
+  });
+
   describe('--confirm 确认模式', () => {
     it('应该显示确认提示', async () => {
       const mockSkills = {

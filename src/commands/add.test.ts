@@ -409,6 +409,36 @@ describe('addCommand', () => {
     });
   });
 
+  describe('--no-save', () => {
+    it('应该安装技能但不写入 apm.json', async () => {
+      mockCloneRepo.mockResolvedValue('/tmp/repo');
+
+      try {
+        await addCommand('github:owner/repo', { noSave: true, yes: true });
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockAddSkill).not.toHaveBeenCalled();
+      expect(mockInstallCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          internal: true,
+          skills: ['test-skill'],
+          prefetchedSourceDir: '/tmp/repo',
+          skillEntries: expect.objectContaining({
+            'test-skill': expect.objectContaining({
+              sourceType: 'github',
+              source: 'owner/repo',
+            }),
+          }),
+        })
+      );
+      expect(mockLogInfo).toHaveBeenCalledWith(
+        expect.stringContaining('This skill is not managed by apm ls/install/update/remove')
+      );
+    });
+  });
+
   describe('技能已存在', () => {
     beforeEach(() => {
       mockReadSkillsJson.mockResolvedValue({
@@ -458,6 +488,21 @@ describe('addCommand', () => {
       }
 
       expect(mockAddSkill).toHaveBeenCalled();
+    });
+
+    it('--no-save 时应该显示不保存的确认提示', async () => {
+      mockConfirm.mockResolvedValue(false);
+
+      try {
+        await addCommand('npm:package', { noSave: true });
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockConfirm).toHaveBeenCalledWith({
+        message: expect.stringContaining('Install without saving'),
+      });
+      expect(mockAddSkill).not.toHaveBeenCalled();
     });
   });
 
