@@ -228,6 +228,28 @@ describe('listCommand', () => {
       expect(Table).toHaveBeenCalled();
     });
   });
+
+  describe('branch 条目缺少 commit 时', () => {
+    it('应该降级为仅显示 branch，而不是抛出异常', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          'branch-without-commit': {
+            sourceType: 'github',
+            source: 'owner/repo',
+            sourceUrl: 'https://github.com/owner/repo.git',
+            mode: 'branch',
+            branch: 'main',
+            skillPath: 'skills/test/SKILL.md',
+          },
+        },
+      });
+      mockExistsSync.mockReturnValue(true);
+
+      await expect(listCommand()).resolves.toBeUndefined();
+      expect(Table).toHaveBeenCalled();
+    });
+  });
 });
 
 afterAll(() => {

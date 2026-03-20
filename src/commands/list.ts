@@ -46,9 +46,12 @@ function formatVersion(entry: { mode?: string; version?: string; sourceType?: st
 
   // 对于 Branch 模式 - 显示为 branch@commit缩写（7 字符，符合 git log 标准）
   if (entry.mode === 'branch') {
-    const branch = (entry as any).branch;
+    const branch = String((entry as any).branch || '-');
     const commit = (entry as any).commit;
-    const shortCommit = commit.slice(0, 7); // git log 标准格式
+    if (!commit) {
+      return pc.yellow(branch);
+    }
+    const shortCommit = String(commit).slice(0, 7); // git log 标准格式
     return pc.yellow(`${branch}@${shortCommit}`);
   }
 
