@@ -9,9 +9,9 @@ import { cloneRepo, getCurrentBranch, getLatestCommit, cleanup as gitCleanup } f
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
 import { resolveNpmVersion } from '../npm/resolve-version';
 import { discoverSkills, filterSkills, getSkillDisplayName } from '../skills';
-import { addSkill, readSkillsJson } from '../skills-json';
+import { addSkill, readSkillsJson, writeSkillsJson } from '../skills-json';
 import { parseSource } from '../source-parser';
-import { getDefaultAdditionalAgents } from '../agents.js';
+import { getDefaultAdditionalAgents, toPersistedAgentConfig } from '../agents.js';
 import type { AddOptions, Skill, SkillEntry } from '../types';
 import { installCommand } from './install';
 import { showLogo } from '../logo.js';
@@ -269,6 +269,11 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
     const results: Array<{ skill: Skill; success: boolean; error?: string }> = [];
     const skillEntries: Record<string, SkillEntry> = {};
 
+    if (!noSave && currentSkills.additionalAgents === undefined) {
+      currentSkills.additionalAgents = getDefaultAdditionalAgents().map(toPersistedAgentConfig);
+      await writeSkillsJson(currentSkills, global);
+    }
+
     for (const skill of selectedSkills) {
       try {
         // 计算相对路径
@@ -392,7 +397,7 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
       const addedNames = success.map((r) => r.skill.name);
 
       try {
-        const additionalAgents = currentSkills.additionalAgents || getDefaultAdditionalAgents();
+        const additionalAgents = currentSkills.additionalAgents ?? getDefaultAdditionalAgents();
         const targetAgents = ['universal', ...additionalAgents.map((a) => a.name)];
 
         // 调用 installCommand（internal 模式，不显示 intro）

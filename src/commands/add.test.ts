@@ -63,6 +63,7 @@ vi.mock('../npm/resolve-version', () => ({
 vi.mock('../skills-json', () => ({
   readSkillsJson: vi.fn(),
   addSkill: vi.fn(),
+  writeSkillsJson: vi.fn(),
 }));
 
 vi.mock('../skills', () => ({
@@ -80,7 +81,7 @@ import { cloneRepo, getCurrentBranch, getLatestCommit, cleanup as gitCleanup } f
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
 import { resolveNpmVersion } from '../npm/resolve-version';
 import { discoverSkills, filterSkills } from '../skills';
-import { addSkill, readSkillsJson } from '../skills-json';
+import { addSkill, readSkillsJson, writeSkillsJson } from '../skills-json';
 import { addCommand } from './add';
 import { installCommand } from './install';
 
@@ -93,6 +94,7 @@ const mockNpmCleanup = npmCleanup as any;
 const mockResolveNpmVersion = resolveNpmVersion as any;
 const mockReadSkillsJson = readSkillsJson as any;
 const mockAddSkill = addSkill as any;
+const mockWriteSkillsJson = writeSkillsJson as any;
 const mockDiscoverSkills = discoverSkills as any;
 const mockFilterSkills = filterSkills as any;
 const mockInstallCommand = installCommand as any;
@@ -148,6 +150,7 @@ describe('addCommand', () => {
     });
 
     mockAddSkill.mockResolvedValue(undefined);
+    mockWriteSkillsJson.mockResolvedValue(undefined);
     mockInstallCommand.mockResolvedValue(undefined);
 
     mockGitCleanup.mockResolvedValue(undefined);
@@ -435,6 +438,55 @@ describe('addCommand', () => {
       );
       expect(mockLogInfo).toHaveBeenCalledWith(
         expect.stringContaining('This skill is not managed by apm ls/install/update/remove'),
+      );
+    });
+  });
+
+  describe('additionalAgents 持久化', () => {
+    it('空配置首次 add 时应该写入默认的 claude-code agent', async () => {
+      mockCloneRepo.mockResolvedValue('/tmp/repo');
+
+      try {
+        await addCommand('github:owner/repo', { yes: true });
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockWriteSkillsJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          version: 1,
+          skills: {},
+          additionalAgents: [
+            {
+              name: 'claude-code',
+              displayName: 'Claude Code',
+              skillsDir: '.claude/skills',
+            },
+          ],
+        }),
+        false,
+      );
+    });
+
+    it('显式空 additionalAgents 时不应该回填默认 agent', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        additionalAgents: [],
+        skills: {},
+      });
+      mockCloneRepo.mockResolvedValue('/tmp/repo');
+
+      try {
+        await addCommand('github:owner/repo', { yes: true });
+      } catch (e) {
+        // process.exit 会被调用
+      }
+
+      expect(mockWriteSkillsJson).not.toHaveBeenCalled();
+      expect(mockInstallCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agents: ['universal'],
+        }),
       );
     });
   });
