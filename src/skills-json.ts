@@ -6,6 +6,7 @@
 import { existsSync } from 'fs';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { dirname, join, resolve } from 'path';
+import { getDefaultAdditionalAgents, toPersistedAgentConfig } from './agents.js';
 import { APM_JSON_FILE, APM_JSON_VERSION, GLOBAL_APM_DIR, PROJECT_APM_DIR } from './constants.js';
 import type { SkillEntry, SkillsJson } from './types.js';
 
@@ -44,13 +45,13 @@ export function getApmsJsonPath(global = false): string {
   // 项目模式：使用 .agents/apm.json
   return join(findProjectRootSync(), PROJECT_APM_DIR, APM_JSON_FILE);
 }
-
 /**
  * 创建空的 apm.json 结构
  */
 function createEmptySkillsJson(): SkillsJson {
   return {
     version: APM_JSON_VERSION,
+    additionalAgents: getDefaultAdditionalAgents().map(toPersistedAgentConfig),
     skills: {},
   };
 }
@@ -118,6 +119,10 @@ export async function writeSkillsJson(data: SkillsJson, global = false): Promise
 export async function addSkill(name: string, entry: SkillEntry, global = false): Promise<void> {
   const data = await readSkillsJson(global);
   data.skills[name] = entry;
+  // 确保 additionalAgents 字段存在（防御性编程）
+  if (data.additionalAgents === undefined) {
+    data.additionalAgents = getDefaultAdditionalAgents().map(toPersistedAgentConfig);
+  }
   await writeSkillsJson(data, global);
 }
 

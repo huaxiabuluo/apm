@@ -9,18 +9,13 @@ describe('apm add - Git 版本语法', () => {
   const testDir = path.join(process.cwd(), 'tmp', 'test-add-command');
   const rootDir = process.cwd();
   const cliPath = path.join(rootDir, 'bin', 'cli.mjs');
-  const builtCliPath = path.join(rootDir, 'dist', 'cli.mjs');
 
   beforeAll(async () => {
-    try {
-      await fs.access(builtCliPath);
-    } catch {
-      execSync('pnpm build', {
-        cwd: rootDir,
-        encoding: 'utf-8',
-        stdio: 'pipe',
-      });
-    }
+    execSync('pnpm build', {
+      cwd: rootDir,
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
 
     await fs.mkdir(testDir, { recursive: true });
   });

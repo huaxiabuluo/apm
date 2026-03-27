@@ -9,7 +9,7 @@ import { cloneRepo, getCurrentBranch, getLatestCommit, cleanup as gitCleanup } f
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
 import { resolveNpmVersion } from '../npm/resolve-version';
 import { discoverSkills, filterSkills, getSkillDisplayName } from '../skills';
-import { addSkill, readSkillsJson, writeSkillsJson } from '../skills-json';
+import { readSkillsJson, writeSkillsJson } from '../skills-json';
 import { parseSource } from '../source-parser';
 import { getDefaultAdditionalAgents, toPersistedAgentConfig } from '../agents.js';
 import type { AddOptions, Skill, SkillEntry } from '../types';
@@ -269,9 +269,9 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
     const results: Array<{ skill: Skill; success: boolean; error?: string }> = [];
     const skillEntries: Record<string, SkillEntry> = {};
 
+    // 初始化 additionalAgents（内存中修改，不立即写入）
     if (!noSave && currentSkills.additionalAgents === undefined) {
       currentSkills.additionalAgents = getDefaultAdditionalAgents().map(toPersistedAgentConfig);
-      await writeSkillsJson(currentSkills, global);
     }
 
     for (const skill of selectedSkills) {
@@ -354,7 +354,8 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
         }
 
         if (!noSave) {
-          await addSkill(skill.name, entry, global);
+          // 直接修改内存对象，避免重复写入
+          currentSkills.skills[skill.name] = entry;
         }
         skillEntries[skill.name] = entry;
         results.push({ skill, success: true });
@@ -370,6 +371,11 @@ export async function addCommand(sourceInput: string, options: AddOptions = {}):
     // 8. 结果汇总
     const success = results.filter((r) => r.success);
     const failed = results.filter((r) => !r.success);
+
+    // 统一写入 apm.json（只写入一次）
+    if (!noSave && success.length > 0) {
+      await writeSkillsJson(currentSkills, global);
+    }
 
     if (success.length > 0) {
       const location = global ? `~/.agents/apm.json` : `.agents/apm.json`;

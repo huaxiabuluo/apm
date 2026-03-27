@@ -25,23 +25,58 @@ import type {
   UpdateOptions,
 } from './types.js';
 
+type CliCommand = 'init' | 'add' | 'install' | 'list' | 'remove' | 'check' | 'update' | 'version';
+
+interface ParsedAddArgs {
+  source?: string;
+  options: AddOptions;
+}
+
+function isHelpFlag(arg: string): boolean {
+  return arg === '-h' || arg === '--help';
+}
+
+function hasHelpFlag(args: string[]): boolean {
+  return args.some(isHelpFlag);
+}
+
+function isVersionFlag(arg: string): boolean {
+  return arg === '-v' || arg === '--version';
+}
+
+function normalizeCommand(command: string): CliCommand | undefined {
+  switch (command) {
+    case 'init':
+    case 'add':
+    case 'install':
+    case 'list':
+    case 'remove':
+    case 'check':
+    case 'update':
+    case 'version':
+      return command;
+    case 'i':
+      return 'install';
+    case 'ls':
+      return 'list';
+    case 'rm':
+      return 'remove';
+    default:
+      return undefined;
+  }
+}
+
 /**
  * 显示帮助信息
  */
-function showHelp() {
+function showGlobalHelp() {
   console.log();
   console.log(pc.bgCyan(pc.black(' apm ')));
   console.log();
   console.log(pc.bold('Usage:'));
-  console.log(`  ${pc.cyan('apm init')} [options]`);
-  console.log(`  ${pc.cyan('apm add')} <source> [options]`);
-  console.log(`  ${pc.cyan('apm install')} [options]`);
-  console.log(`  ${pc.cyan('apm list')} [options]`);
-  console.log(`  ${pc.cyan('apm remove')} <skill-name> [<skill-name>...] [options]`);
-  console.log(`  ${pc.cyan('apm check')} [skill-name...] [options]`);
-  console.log(`  ${pc.cyan('apm update')} [skill-name...] [options]`);
-  console.log(`  ${pc.cyan('apm version')}`);
-  console.log(`  ${pc.cyan('apm help')}`);
+  console.log(`  ${pc.cyan('apm <command>')} [options]`);
+  console.log(`  ${pc.cyan('apm --help')}`);
+  console.log(`  ${pc.cyan('apm --version')}`);
   console.log();
   console.log(pc.bold('Commands:'));
   console.log(`  ${pc.cyan('init')}     Initialize apm.json configuration`);
@@ -52,12 +87,14 @@ function showHelp() {
   console.log(`  ${pc.cyan('check')}    Check for skill updates`);
   console.log(`  ${pc.cyan('update')}   Update skills to latest versions`);
   console.log(`  ${pc.cyan('version')}  Show version information`);
-  console.log(`  ${pc.cyan('help')}     Show help information`);
   console.log();
   console.log(pc.bold('Source Formats:'));
   console.log(`  ${pc.cyan('github:owner/repo[@<version>]')}    GitHub shorthand for a Git repository`);
   console.log(`  ${pc.cyan('git:<url>[@<version>]')}            Git repository`);
   console.log(`  ${pc.cyan('npm:<package>[@<version>][?registry=<url>]')}  NPM package`);
+  console.log();
+  console.log(pc.bold('Help:'));
+  console.log(`  ${pc.cyan('apm <command> --help')}   Show help for a specific command`);
   console.log();
   console.log(pc.bold('Version Syntax:'));
   console.log(`  ${pc.cyan('(none)')}           Use the default branch`);
@@ -80,33 +117,20 @@ function showHelp() {
     `  ${pc.dim("'npm:@anthropic/skills@1.2.3?registry=https://registry.example.com'")}  (custom registry + version)`,
   );
   console.log();
-  console.log(pc.bold('Global Options:'));
-  console.log(`  ${pc.yellow('-g, --global')}      Use global config and directories (${pc.dim('~/.agents/')})`);
+  console.log(pc.bold('Root Options:'));
   console.log(`  ${pc.yellow('-h, --help')}        Show this help message`);
   console.log(`  ${pc.yellow('-v, --version')}     Show version`);
-  console.log();
-  console.log(pc.bold('Command Options:'));
-  console.log(`  ${pc.yellow('init  -a, --agent')}       Select specific agents`);
-  console.log(`  ${pc.yellow('add   -y, --yes')}         Skip confirmation prompts`);
-  console.log(`  ${pc.yellow('add   -s, --skill')}       Select specific skills to install`);
-  console.log(`  ${pc.yellow('add   -l, --list')}        List available skills without installing`);
-  console.log(`  ${pc.yellow('add   --no-save')}         Install skills without saving to apm.json`);
-  console.log(`  ${pc.yellow('install --confirm')}       Confirm before installing`);
-  console.log(`  ${pc.yellow('list  -v, --verbose')}     Show detailed information`);
-  console.log(`  ${pc.yellow('remove -y, --yes')}        Skip confirmation prompts`);
-  console.log(`  ${pc.yellow('update --select')}         Select skills interactively`);
-  console.log(`  ${pc.yellow('update --no-install')}     Skip installation after updating`);
   console.log();
   console.log(pc.bold('Examples:'));
   console.log(`  ${pc.dim('apm init')}`);
   console.log(`  ${pc.dim('apm init --agent claude-code --agent openclaw')}`);
   console.log(`  ${pc.dim('apm init -g')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills')}`);
+  console.log(`  ${pc.dim('apm add -g github:anthropics/skills')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills --skill frontend-design --skill skill-creator')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills --skill "*"')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills --list')}`);
   console.log(`  ${pc.dim('apm add github:anthropics/skills --no-save')}`);
-  console.log(`  ${pc.dim('apm add -g github:anthropics/skills')}`);
   console.log(`  ${pc.dim("apm add 'npm:@ai-dancer/apm?registry=https://registry.npmmirror.com/'")}`);
   console.log(`  ${pc.dim('apm install')}`);
   console.log(`  ${pc.dim('apm install --confirm')}`);
@@ -118,6 +142,119 @@ function showHelp() {
   console.log(`  ${pc.dim('apm update --select')}`);
   console.log(`  ${pc.dim('apm update my-skill --no-install')}`);
   console.log();
+}
+
+function showCommandHelp(command: Exclude<CliCommand, 'version'>): void {
+  console.log();
+  console.log(pc.bgCyan(pc.black(' apm ')));
+  console.log();
+
+  switch (command) {
+    case 'init':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm init')} [options]`);
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('-a, --agent <name>')}  Select specific agents`);
+      console.log(`  ${pc.yellow('-g, --global')}        Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-h, --help')}          Show help for this command`);
+      console.log();
+      console.log(pc.bold('Examples:'));
+      console.log(`  ${pc.dim('apm init')}`);
+      console.log(`  ${pc.dim('apm init --agent claude-code --agent openclaw')}`);
+      console.log(`  ${pc.dim('apm init -g')}`);
+      console.log();
+      return;
+    case 'add':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm add')} [options] <source>`);
+      console.log(`  ${pc.cyan('apm add')} <source> [options]`);
+      console.log();
+      console.log(pc.dim('Options can appear before or after the source argument.'));
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('-g, --global')}        Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-y, --yes')}           Skip confirmation prompts`);
+      console.log(`  ${pc.yellow('-s, --skill <name>')}  Select specific skills to install`);
+      console.log(`  ${pc.yellow('-l, --list')}          List available skills without installing`);
+      console.log(`  ${pc.yellow('--no-save')}           Install skills without saving to apm.json`);
+      console.log(`  ${pc.yellow('-h, --help')}          Show help for this command`);
+      console.log();
+      console.log(pc.bold('Examples:'));
+      console.log(`  ${pc.dim('apm add github:anthropics/skills')}`);
+      console.log(`  ${pc.dim('apm add -g github:anthropics/skills')}`);
+      console.log(`  ${pc.dim('apm add github:anthropics/skills --skill frontend-design --skill skill-creator')}`);
+      console.log(`  ${pc.dim('apm add github:anthropics/skills --list')}`);
+      console.log();
+      return;
+    case 'install':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm install')} [options]`);
+      console.log(`  ${pc.cyan('apm i')} [options]`);
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('--confirm')}          Confirm before installing`);
+      console.log(`  ${pc.yellow('-g, --global')}       Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-h, --help')}         Show help for this command`);
+      console.log();
+      return;
+    case 'list':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm list')} [options]`);
+      console.log(`  ${pc.cyan('apm ls')} [options]`);
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('-v, --verbose')}      Show detailed information`);
+      console.log(`  ${pc.yellow('-g, --global')}       Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-h, --help')}         Show help for this command`);
+      console.log();
+      return;
+    case 'remove':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm remove')} [options] <skill-name> [<skill-name>...]`);
+      console.log(`  ${pc.cyan('apm rm')} [options] <skill-name> [<skill-name>...]`);
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('-y, --yes')}          Skip confirmation prompts`);
+      console.log(`  ${pc.yellow('-g, --global')}       Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-h, --help')}         Show help for this command`);
+      console.log();
+      return;
+    case 'check':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm check')} [options] [skill-name...]`);
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('-g, --global')}       Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-h, --help')}         Show help for this command`);
+      console.log();
+      return;
+    case 'update':
+      console.log(pc.bold('Usage:'));
+      console.log(`  ${pc.cyan('apm update')} [options] [skill-name...]`);
+      console.log();
+      console.log(pc.bold('Options:'));
+      console.log(`  ${pc.yellow('--select')}           Select skills interactively`);
+      console.log(`  ${pc.yellow('--no-install')}       Skip installation after updating`);
+      console.log(`  ${pc.yellow('-g, --global')}       Use global config and directories (${pc.dim('~/.agents/')})`);
+      console.log(`  ${pc.yellow('-h, --help')}         Show help for this command`);
+      console.log();
+      return;
+  }
+}
+
+function showHelp(command?: CliCommand): void {
+  if (!command) {
+    showGlobalHelp();
+    return;
+  }
+
+  if (command === 'version') {
+    showVersion();
+    return;
+  }
+
+  showCommandHelp(command);
 }
 
 /**
@@ -135,10 +272,11 @@ function showVersion() {
 /**
  * 解析 add 命令选项
  */
-function parseAddOptions(args: string[]): AddOptions {
+function parseAddArgs(args: string[]): ParsedAddArgs {
   const options: AddOptions = {
     skill: [],
   };
+  let source: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -158,10 +296,12 @@ function parseAddOptions(args: string[]): AddOptions {
         options.skill!.push(args[i++]!);
       }
       i--; // 回退一个位置
+    } else if (!arg.startsWith('-') && source === undefined) {
+      source = arg;
     }
   }
 
-  return options;
+  return { source, options };
 }
 
 /**
@@ -302,26 +442,50 @@ function parseInitOptions(args: string[]): InitOptions {
 /**
  * 主函数
  */
-async function main() {
+export async function main(args: string[] = process.argv.slice(2)) {
   // 解析命令行参数
-  const args = process.argv.slice(2);
-
   if (args.length === 0) {
     showHelp();
     return;
   }
 
-  const command = args[0];
+  if (isHelpFlag(args[0]!)) {
+    showHelp();
+    return;
+  }
+
+  if (isVersionFlag(args[0]!)) {
+    showVersion();
+    return;
+  }
+
+  const command = normalizeCommand(args[0]!);
+
+  if (!command) {
+    p.log.error(pc.red(`Unknown command: ${args[0]}`));
+    console.log();
+    showHelp();
+    process.exit(1);
+  }
 
   switch (command) {
     case 'init': {
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('init');
+        return;
+      }
       const options = parseInitOptions(args.slice(1));
       await initCommand(options);
       break;
     }
 
     case 'add': {
-      const source = args[1];
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('add');
+        return;
+      }
+
+      const { source, options } = parseAddArgs(args.slice(1));
       if (!source) {
         p.log.error(pc.red('Missing source argument'));
         p.log.message(pc.dim('Usage: apm add <source> [options]'));
@@ -329,27 +493,35 @@ async function main() {
         process.exit(1);
       }
 
-      const options = parseAddOptions(args.slice(2));
       await addCommand(source, options);
       break;
     }
 
-    case 'install':
-    case 'i': {
+    case 'install': {
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('install');
+        return;
+      }
       const options = parseInstallOptions(args.slice(1));
       await installCommand(options);
       break;
     }
 
-    case 'list':
-    case 'ls': {
+    case 'list': {
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('list');
+        return;
+      }
       const options = parseListOptions(args.slice(1));
       await listCommand(options);
       break;
     }
 
-    case 'remove':
-    case 'rm': {
+    case 'remove': {
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('remove');
+        return;
+      }
       const skillNames = args.slice(1).filter((arg) => !arg.startsWith('-'));
       if (skillNames.length === 0) {
         p.log.error(pc.red('Missing skill name argument'));
@@ -363,51 +535,27 @@ async function main() {
     }
 
     case 'check': {
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('check');
+        return;
+      }
       const options = parseCheckOptions(args.slice(1));
       await checkCommand(options);
       break;
     }
 
     case 'update': {
+      if (hasHelpFlag(args.slice(1))) {
+        showHelp('update');
+        return;
+      }
       const options = parseUpdateOptions(args.slice(1));
       await updateCommand(options);
       break;
     }
 
-    case 'help':
-    case '-h':
-    case '--help':
-      showHelp();
-      break;
-
     case 'version':
-    case '-v':
-    case '--version':
       showVersion();
       break;
-
-    default:
-      p.log.error(pc.red(`Unknown command: ${command}`));
-      console.log();
-      showHelp();
-      process.exit(1);
   }
 }
-
-/**
- * 处理错误
- */
-process.on('unhandledRejection', (error) => {
-  if (error instanceof Error) {
-    p.log.error(pc.red(error.message));
-  } else {
-    p.log.error(pc.red(String(error)));
-  }
-  process.exit(1);
-});
-
-// 运行主函数
-main().catch((error) => {
-  p.log.error(pc.red(error instanceof Error ? error.message : String(error)));
-  process.exit(1);
-});

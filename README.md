@@ -213,7 +213,7 @@ apm update -g
 | `apm remove <skill-name>... [-g] [--yes]`                   | Remove skills from config and delete installed files                  |
 | `apm check [skill-name...] [-g]`                            | Check for updates                                                     |
 | `apm update [skill-name...] [-g] [--select] [--no-install]` | Update skills                                                         |
-| `apm help` / `apm version`                                  | Show help or version information                                      |
+| `apm --help` / `apm --version`                              | Show help or version information                                      |
 
 ### `--no-save` Behavior
 

@@ -170,7 +170,19 @@ describe('addCommand', () => {
 
       expect(mockCloneRepo).toHaveBeenCalledWith('https://github.com/owner/repo.git', 'v1.0.0');
       expect(mockDiscoverSkills).toHaveBeenCalled();
-      expect(mockAddSkill).toHaveBeenCalled();
+      expect(mockWriteSkillsJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skills: expect.objectContaining({
+            'test-skill': expect.objectContaining({
+              source: 'owner/repo',
+              sourceType: 'github',
+              mode: 'tag',
+              tag: 'v1.0.0',
+            }),
+          }),
+        }),
+        false,
+      );
     });
 
     it('应该显示源地址和版本信息', async () => {
@@ -290,14 +302,17 @@ describe('addCommand', () => {
         expect.stringContaining('https://registry.npmmirror.com/@ai-dancer/apm'),
       );
       expect(mockLogMessage).toHaveBeenCalledWith(expect.stringContaining('Registry:'));
-      expect(mockAddSkill).toHaveBeenCalledWith(
-        'test-skill',
+      expect(mockWriteSkillsJson).toHaveBeenCalledWith(
         expect.objectContaining({
-          source: '@ai-dancer/apm',
-          sourceType: 'npm',
-          sourceUrl: 'https://registry.npmmirror.com/@ai-dancer/apm',
-          registry: 'https://registry.npmmirror.com/',
-          version: '1.2.3',
+          skills: expect.objectContaining({
+            'test-skill': expect.objectContaining({
+              source: '@ai-dancer/apm',
+              sourceType: 'npm',
+              sourceUrl: 'https://registry.npmmirror.com/@ai-dancer/apm',
+              registry: 'https://registry.npmmirror.com/',
+              version: '1.2.3',
+            }),
+          }),
         }),
         false,
       );
@@ -380,7 +395,14 @@ describe('addCommand', () => {
       }
 
       expect(mockFilterSkills).toHaveBeenCalledWith(mockSkills, ['skill1']);
-      expect(mockAddSkill).toHaveBeenCalledTimes(1);
+      expect(mockWriteSkillsJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skills: expect.objectContaining({
+            skill1: expect.any(Object),
+          }),
+        }),
+        false,
+      );
     });
 
     it('使用 --skill "*" 应该安装所有技能', async () => {
@@ -393,7 +415,7 @@ describe('addCommand', () => {
         // process.exit 会被调用
       }
 
-      expect(mockAddSkill).toHaveBeenCalled();
+      expect(mockWriteSkillsJson).toHaveBeenCalled();
     });
   });
 
@@ -408,7 +430,7 @@ describe('addCommand', () => {
       }
 
       expect(mockConfirm).not.toHaveBeenCalled();
-      expect(mockAddSkill).toHaveBeenCalled();
+      expect(mockWriteSkillsJson).toHaveBeenCalled();
     });
   });
 
@@ -422,7 +444,7 @@ describe('addCommand', () => {
         // process.exit 会被调用
       }
 
-      expect(mockAddSkill).not.toHaveBeenCalled();
+      expect(mockWriteSkillsJson).not.toHaveBeenCalled();
       expect(mockInstallCommand).toHaveBeenCalledWith(
         expect.objectContaining({
           internal: true,
@@ -455,7 +477,9 @@ describe('addCommand', () => {
       expect(mockWriteSkillsJson).toHaveBeenCalledWith(
         expect.objectContaining({
           version: 1,
-          skills: {},
+          skills: expect.objectContaining({
+            'test-skill': expect.any(Object),
+          }),
           additionalAgents: [
             {
               name: 'claude-code',
@@ -482,10 +506,16 @@ describe('addCommand', () => {
         // process.exit 会被调用
       }
 
-      expect(mockWriteSkillsJson).not.toHaveBeenCalled();
+      // 即使 additionalAgents 为空数组，添加技能后仍然需要写入
+      expect(mockWriteSkillsJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          additionalAgents: [], // 应该保持空数组，不回填默认值
+        }),
+        false,
+      );
       expect(mockInstallCommand).toHaveBeenCalledWith(
         expect.objectContaining({
-          agents: ['universal'],
+          agents: ['universal'], // 只有 universal，没有 claude-code
         }),
       );
     });
@@ -539,7 +569,7 @@ describe('addCommand', () => {
         // process.exit 会被调用
       }
 
-      expect(mockAddSkill).toHaveBeenCalled();
+      expect(mockWriteSkillsJson).toHaveBeenCalled();
     });
 
     it('--no-save 时应该显示不保存的确认提示', async () => {
@@ -570,7 +600,7 @@ describe('addCommand', () => {
       }
 
       expect(mockReadSkillsJson).toHaveBeenCalledWith(true);
-      expect(mockAddSkill).toHaveBeenCalledWith(expect.any(String), expect.any(Object), true);
+      expect(mockWriteSkillsJson).toHaveBeenCalledWith(expect.any(Object), true);
     });
   });
 
