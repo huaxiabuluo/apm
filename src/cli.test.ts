@@ -84,6 +84,13 @@ describe('cli', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('--verbose'));
   });
 
+  it('`apm --version` 应该只输出版本号', async () => {
+    await main(['--version']);
+
+    expect(consoleLogSpy).toHaveBeenCalledTimes(1);
+    expect(consoleLogSpy).toHaveBeenCalledWith('1.1.1');
+  });
+
   it('应该允许 add 选项出现在 source 前面', async () => {
     await main(['add', '-g', '--list', 'github:owner/repo']);
 

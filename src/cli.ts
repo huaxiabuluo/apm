@@ -13,6 +13,7 @@ import { installCommand } from './commands/install.js';
 import { listCommand } from './commands/list.js';
 import { removeCommand } from './commands/remove.js';
 import { updateCommand } from './commands/update.js';
+import { VERSION } from './version.js';
 
 // 类型导入
 import type {
@@ -261,12 +262,7 @@ function showHelp(command?: CliCommand): void {
  * 显示版本信息
  */
 function showVersion() {
-  console.log();
-  console.log(pc.bgCyan(pc.black(' apm ')));
-  console.log();
-  console.log(pc.dim('Version: 1.0.0'));
-  console.log(pc.dim('apm.json format: version 1'));
-  console.log();
+  console.log(VERSION);
 }
 
 /**

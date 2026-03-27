@@ -8,4 +8,4 @@
 export type { AddOptions, CheckOptions, InstallOptions, ListOptions, RemoveOptions, UpdateOptions } from './types.js';
 
 // 版本信息
-export const VERSION = '1.0.0';
+export { VERSION } from './version.js';
