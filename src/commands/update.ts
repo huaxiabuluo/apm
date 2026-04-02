@@ -219,9 +219,9 @@ export async function updateCommand(options: UpdateOptions = {}): Promise<void> 
 
   for (const result of updateableSkills) {
     if (skillsToUpdate.includes(result.name)) {
-      p.log.message(
-        `  ${pc.cyan(result.name)}: ${pc.yellow(result.current.version)} → ${pc.green(result.latest!.version)}`,
-      );
+      const latestVersion =
+        result.latest!.version.length > 7 ? result.latest!.version.slice(0, 7) : result.latest!.version;
+      p.log.message(`  ${pc.cyan(result.name)}: ${pc.yellow(result.current.version)} → ${pc.green(latestVersion)}`);
     }
   }
 

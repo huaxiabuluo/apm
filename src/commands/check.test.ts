@@ -363,7 +363,7 @@ describe('checkSkillVersion', () => {
       const result = await checkSkillVersion('test-branch', entry);
 
       expect(result.hasUpdate).toBe(true);
-      expect(result.latest?.version).toBe('def987g');
+      expect(result.latest?.version).toBe('def987ghi654321');
       expect(result.current?.extra).toBe('main');
     });
 

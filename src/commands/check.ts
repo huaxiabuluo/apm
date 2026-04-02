@@ -119,18 +119,17 @@ async function checkGitTagSkill(name: string, entry: TagSkillEntry): Promise<Ver
 async function checkGitBranchSkill(name: string, entry: BranchSkillEntry): Promise<VersionCheckResult> {
   try {
     const latestCommit = await getRemoteBranchCommit(entry.sourceUrl, entry.branch);
-    const shortCommit = latestCommit.slice(0, 7);
-    const hasUpdate = latestCommit !== entry.commit;
+    const hasUpdate = entry.commit ? latestCommit !== entry.commit : true;
 
     return {
       name,
       sourceType: entry.sourceType,
       current: {
-        version: entry.commit.slice(0, 7),
+        version: entry.commit ? entry.commit.slice(0, 7) : 'none',
         extra: entry.branch,
       },
       latest: {
-        version: shortCommit,
+        version: latestCommit,
         extra: entry.branch,
       },
       hasUpdate,
@@ -141,7 +140,7 @@ async function checkGitBranchSkill(name: string, entry: BranchSkillEntry): Promi
       name,
       sourceType: entry.sourceType,
       current: {
-        version: entry.commit.slice(0, 7),
+        version: entry.commit ? entry.commit.slice(0, 7) : 'none',
         extra: entry.branch,
       },
       hasUpdate: false,
@@ -273,10 +272,13 @@ function displayCheckResults(results: VersionCheckResult[]): void {
     } else if (result.warning) {
       latest = pc.yellow(result.warning);
     } else if (result.latest) {
+      // branch 类型存的是完整 commit SHA，显示时截断
+      const displayVersion =
+        result.latest.version.length > 7 ? result.latest.version.slice(0, 7) : result.latest.version;
       if (result.latest.extra) {
-        latest = pc.green(`${result.latest.extra}@${result.latest.version}`);
+        latest = pc.green(`${result.latest.extra}@${displayVersion}`);
       } else {
-        latest = pc.green(result.latest.version);
+        latest = pc.green(displayVersion);
       }
     } else {
       latest = pc.dim('-');

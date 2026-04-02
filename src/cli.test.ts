@@ -1,4 +1,8 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf-8'));
 
 vi.mock('@clack/prompts', () => ({
   log: {
@@ -88,7 +92,7 @@ describe('cli', () => {
     await main(['--version']);
 
     expect(consoleLogSpy).toHaveBeenCalledTimes(1);
-    expect(consoleLogSpy).toHaveBeenCalledWith('1.1.1');
+    expect(consoleLogSpy).toHaveBeenCalledWith(pkg.version);
   });
 
   it('应该允许 add 选项出现在 source 前面', async () => {
