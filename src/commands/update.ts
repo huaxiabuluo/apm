@@ -18,6 +18,10 @@ import { checkSkillVersion } from './check';
 import { installCommand } from './install';
 import { showLogo } from '../logo.js';
 
+function formatDisplayVersion(version: string, sourceType: VersionCheckResult['sourceType']): string {
+  return sourceType === 'github' || sourceType === 'git' ? version.slice(0, 7) : version;
+}
+
 /**
  * 获取所有可更新的技能
  *
@@ -66,7 +70,7 @@ async function selectSkillsToUpdate(updateableSkills: VersionCheckResult[]): Pro
   const options = updateableSkills.map((skill) => ({
     value: skill.name,
     label: skill.name,
-    hint: `${pc.yellow(skill.current.version)} → ${pc.green(skill.latest!.version)}`,
+    hint: `${pc.yellow(skill.current.version)} → ${pc.green(formatDisplayVersion(skill.latest!.version, skill.sourceType))}`,
   }));
 
   // 添加"全选"选项
@@ -219,8 +223,7 @@ export async function updateCommand(options: UpdateOptions = {}): Promise<void> 
 
   for (const result of updateableSkills) {
     if (skillsToUpdate.includes(result.name)) {
-      const latestVersion =
-        result.latest!.version.length > 7 ? result.latest!.version.slice(0, 7) : result.latest!.version;
+      const latestVersion = formatDisplayVersion(result.latest!.version, result.sourceType);
       p.log.message(`  ${pc.cyan(result.name)}: ${pc.yellow(result.current.version)} → ${pc.green(latestVersion)}`);
     }
   }

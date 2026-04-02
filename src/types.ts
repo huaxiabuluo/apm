@@ -66,7 +66,7 @@ export interface BranchSkillEntry {
   sourceUrl: string;
   mode: 'branch';
   branch: string;
-  commit: string;
+  commit?: string;
   skillPath: string;
 }
 

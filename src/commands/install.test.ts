@@ -534,6 +534,30 @@ describe('installCommand', () => {
       expect(mockGitCleanup).not.toHaveBeenCalled();
     });
   });
+
+  describe('branch 条目缺少 commit 时', () => {
+    it('应该 clone 分支但跳过 checkout commit', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          'test-skill': {
+            sourceType: 'github',
+            source: 'owner/repo',
+            sourceUrl: 'https://github.com/owner/repo.git',
+            mode: 'branch',
+            branch: 'main',
+            skillPath: 'SKILL.md',
+          },
+        },
+      });
+      mockCloneRepo.mockResolvedValue('/tmp/test-skill');
+
+      await installCommand();
+
+      expect(mockCloneRepo).toHaveBeenCalledWith('https://github.com/owner/repo.git', 'main');
+      expect(mockCheckoutCommit).not.toHaveBeenCalled();
+    });
+  });
 });
 
 afterAll(() => {

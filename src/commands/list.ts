@@ -10,7 +10,7 @@ import pc from 'picocolors';
 import { getConfiguredAgents, resolveAgentSkillsDir } from '../agents.js';
 import { readSkillsJson } from '../skills-json';
 import { showLogo } from '../logo.js';
-import type { AgentConfigEntry, ListOptions } from '../types';
+import type { AgentConfigEntry, BranchSkillEntry, ListOptions, SkillEntry, TagSkillEntry } from '../types';
 
 /**
  * 技能安装状态
@@ -38,16 +38,17 @@ function formatSource(entry: { source: string; sourceType: string; sourceUrl: st
  * 格式化 version 显示
  * 按照 git log 标准显示：tag 直接显示，branch 显示为 branch@commit缩写
  */
-function formatVersion(entry: { mode?: string; version?: string; sourceType?: string }): string {
+function formatVersion(entry: SkillEntry): string {
   // 对于 Tag 模式 - 直接显示 tag 名
-  if (entry.mode === 'tag') {
-    return pc.yellow((entry as any).tag);
+  if ('mode' in entry && entry.mode === 'tag') {
+    return pc.yellow((entry as TagSkillEntry).tag);
   }
 
   // 对于 Branch 模式 - 显示为 branch@commit缩写（7 字符，符合 git log 标准）
-  if (entry.mode === 'branch') {
-    const branch = String((entry as any).branch || '-');
-    const commit = (entry as any).commit;
+  if ('mode' in entry && entry.mode === 'branch') {
+    const branchEntry = entry as BranchSkillEntry;
+    const branch = String(branchEntry.branch || '-');
+    const commit = branchEntry.commit;
     if (!commit) {
       return pc.yellow(branch);
     }
@@ -225,11 +226,10 @@ export async function listCommand(options: ListOptions = {}): Promise<void> {
 
       // 对于 Tag 模式
       if ('mode' in entry && entry.mode === 'tag') {
+        const tagEntry = entry as TagSkillEntry;
         table.push([
           {
-            content: `${pc.dim('Type:')} ${pc.cyan('tag')} | ${pc.dim('Tag:')} ${pc.yellow(
-              String((entry as any).tag),
-            )}`,
+            content: `${pc.dim('Type:')} ${pc.cyan('tag')} | ${pc.dim('Tag:')} ${pc.yellow(String(tagEntry.tag))}`,
             colSpan: 4,
           },
         ]);
@@ -237,11 +237,13 @@ export async function listCommand(options: ListOptions = {}): Promise<void> {
 
       // 对于 Branch 模式
       if ('mode' in entry && entry.mode === 'branch') {
+        const branchEntry = entry as BranchSkillEntry;
+        const commit = branchEntry.commit ? String(branchEntry.commit) : '-';
         table.push([
           {
             content: `${pc.dim('Type:')} ${pc.cyan('branch')} | ${pc.dim('Branch:')} ${pc.yellow(
-              String((entry as any).branch),
-            )} | ${pc.dim('Commit:')} ${pc.dim(String((entry as any).commit))}`,
+              String(branchEntry.branch),
+            )} | ${pc.dim('Commit:')} ${pc.dim(commit)}`,
             colSpan: 4,
           },
         ]);

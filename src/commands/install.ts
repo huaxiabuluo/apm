@@ -177,7 +177,7 @@ async function installSkill(
     cleanupFn = gitCleanup;
 
     // 如果是 branch 类型，需要 checkout 到指定的 commit
-    if (gitEntry.mode === 'branch') {
+    if (gitEntry.mode === 'branch' && gitEntry.commit) {
       await checkoutCommit(tempDir, gitEntry.commit);
     }
   } else {

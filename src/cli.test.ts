@@ -56,10 +56,12 @@ vi.mock('./commands/update.js', () => ({
 
 import { addCommand } from './commands/add.js';
 import { listCommand } from './commands/list.js';
+import * as p from '@clack/prompts';
 import { main } from './cli';
 
 const mockAddCommand = addCommand as ReturnType<typeof vi.fn>;
 const mockListCommand = listCommand as ReturnType<typeof vi.fn>;
+const mockLogError = p.log.error as ReturnType<typeof vi.fn>;
 
 describe('cli', () => {
   const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -116,15 +118,23 @@ describe('cli', () => {
     });
   });
 
-  it('`apm help add` 现在应该作为未知命令处理', async () => {
+  it('`apm help add` 应该显示 add 帮助', async () => {
+    await main(['help', 'add']);
+
+    expect(mockAddCommand).not.toHaveBeenCalled();
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('apm add'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
+  });
+
+  it('未知 add flag 应该报错退出', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation((code?: string | number | null) => {
       throw new Error(`process.exit called with "${code}"`);
     });
 
-    await expect(main(['help', 'add'])).rejects.toThrow('process.exit called with "1"');
+    await expect(main(['add', 'github:owner/repo', '--typo'])).rejects.toThrow('process.exit called with "1"');
 
     expect(mockAddCommand).not.toHaveBeenCalled();
-    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Usage:'));
+    expect(mockLogError).toHaveBeenCalledWith(expect.stringContaining('--typo'));
 
     exitSpy.mockRestore();
   });

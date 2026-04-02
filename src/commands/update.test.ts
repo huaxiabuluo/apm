@@ -287,6 +287,55 @@ describe('updateCommand', () => {
       });
     });
 
+    it('branch 技能在多选提示里应该显示短 SHA', async () => {
+      mockReadSkillsJson.mockResolvedValue({
+        version: 1,
+        skills: {
+          'git-skill': {
+            sourceType: 'github' as const,
+            source: 'owner/repo',
+            sourceUrl: 'https://github.com/owner/repo.git',
+            mode: 'branch' as const,
+            branch: 'main',
+            commit: 'abc1234567890def',
+            skillPath: 'SKILL.md',
+          },
+        },
+      });
+      mockCheckSkillVersion.mockResolvedValue({
+        name: 'git-skill',
+        sourceType: 'github',
+        current: { version: 'abc1234', extra: 'main' },
+        latest: { version: 'def9876543210abc', extra: 'main' },
+        hasUpdate: true,
+      });
+      mockMultiselect.mockResolvedValue(['git-skill']);
+      mockConfirm.mockResolvedValue(true);
+
+      await updateCommand({ select: true });
+
+      expect(mockMultiselect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.arrayContaining([
+            expect.objectContaining({
+              value: 'git-skill',
+              hint: expect.stringContaining('def9876'),
+            }),
+          ]),
+        }),
+      );
+      expect(mockMultiselect).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.arrayContaining([
+            expect.objectContaining({
+              value: 'git-skill',
+              hint: expect.stringContaining('def9876543210abc'),
+            }),
+          ]),
+        }),
+      );
+    });
+
     it('选择"全选"应该更新所有技能', async () => {
       mockMultiselect.mockResolvedValue(['__all__']);
       mockConfirm.mockResolvedValue(true);

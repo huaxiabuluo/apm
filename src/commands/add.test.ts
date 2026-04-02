@@ -62,7 +62,6 @@ vi.mock('../npm/resolve-version', () => ({
 
 vi.mock('../skills-json', () => ({
   readSkillsJson: vi.fn(),
-  addSkill: vi.fn(),
   writeSkillsJson: vi.fn(),
 }));
 
@@ -81,7 +80,7 @@ import { cloneRepo, getCurrentBranch, getLatestCommit, cleanup as gitCleanup } f
 import { downloadNpmPackage, cleanup as npmCleanup } from '../npm/download';
 import { resolveNpmVersion } from '../npm/resolve-version';
 import { discoverSkills, filterSkills } from '../skills';
-import { addSkill, readSkillsJson, writeSkillsJson } from '../skills-json';
+import { readSkillsJson, writeSkillsJson } from '../skills-json';
 import { addCommand } from './add';
 import { installCommand } from './install';
 
@@ -93,7 +92,6 @@ const mockDownloadNpmPackage = downloadNpmPackage as any;
 const mockNpmCleanup = npmCleanup as any;
 const mockResolveNpmVersion = resolveNpmVersion as any;
 const mockReadSkillsJson = readSkillsJson as any;
-const mockAddSkill = addSkill as any;
 const mockWriteSkillsJson = writeSkillsJson as any;
 const mockDiscoverSkills = discoverSkills as any;
 const mockFilterSkills = filterSkills as any;
@@ -149,7 +147,6 @@ describe('addCommand', () => {
       skills: {},
     });
 
-    mockAddSkill.mockResolvedValue(undefined);
     mockWriteSkillsJson.mockResolvedValue(undefined);
     mockInstallCommand.mockResolvedValue(undefined);
 
@@ -330,7 +327,6 @@ describe('addCommand', () => {
       }
 
       expect(mockDiscoverSkills).toHaveBeenCalled();
-      expect(mockAddSkill).not.toHaveBeenCalled();
       expect(mockInstallCommand).not.toHaveBeenCalled();
     });
 
@@ -584,7 +580,6 @@ describe('addCommand', () => {
       expect(mockConfirm).toHaveBeenCalledWith({
         message: expect.stringContaining('Install without saving'),
       });
-      expect(mockAddSkill).not.toHaveBeenCalled();
     });
   });
 

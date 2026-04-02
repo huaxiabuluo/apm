@@ -110,23 +110,6 @@ export async function writeSkillsJson(data: SkillsJson, global = false): Promise
 }
 
 /**
- * 添加或更新技能
- *
- * @param name - 技能名称
- * @param entry - 技能条目
- * @param global - 是否写入全局配置（默认为 false）
- */
-export async function addSkill(name: string, entry: SkillEntry, global = false): Promise<void> {
-  const data = await readSkillsJson(global);
-  data.skills[name] = entry;
-  // 确保 additionalAgents 字段存在（防御性编程）
-  if (data.additionalAgents === undefined) {
-    data.additionalAgents = getDefaultAdditionalAgents().map(toPersistedAgentConfig);
-  }
-  await writeSkillsJson(data, global);
-}
-
-/**
  * 移除技能
  *
  * @param name - 技能名称

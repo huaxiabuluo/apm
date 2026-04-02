@@ -31,6 +31,7 @@ type CliCommand = 'init' | 'add' | 'install' | 'list' | 'remove' | 'check' | 'up
 interface ParsedAddArgs {
   source?: string;
   options: AddOptions;
+  unknownOption?: string;
 }
 
 function isHelpFlag(arg: string): boolean {
@@ -258,6 +259,14 @@ function showHelp(command?: CliCommand): void {
   showCommandHelp(command);
 }
 
+function parseHelpCommand(args: string[]): CliCommand | undefined {
+  if (args.length === 0) {
+    return undefined;
+  }
+
+  return normalizeCommand(args[0]!);
+}
+
 /**
  * 显示版本信息
  */
@@ -273,6 +282,7 @@ function parseAddArgs(args: string[]): ParsedAddArgs {
     skill: [],
   };
   let source: string | undefined;
+  let unknownOption: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -294,10 +304,13 @@ function parseAddArgs(args: string[]): ParsedAddArgs {
       i--; // 回退一个位置
     } else if (!arg.startsWith('-') && source === undefined) {
       source = arg;
+    } else if (arg.startsWith('-')) {
+      unknownOption = arg;
+      break;
     }
   }
 
-  return { source, options };
+  return { source, options, unknownOption };
 }
 
 /**
@@ -450,6 +463,19 @@ export async function main(args: string[] = process.argv.slice(2)) {
     return;
   }
 
+  if (args[0] === 'help') {
+    const helpCommand = parseHelpCommand(args.slice(1));
+    if (args.length > 1 && !helpCommand) {
+      p.log.error(pc.red(`Unknown command: ${args[1]}`));
+      console.log();
+      showHelp();
+      process.exit(1);
+    }
+
+    showHelp(helpCommand);
+    return;
+  }
+
   if (isVersionFlag(args[0]!)) {
     showVersion();
     return;
@@ -481,7 +507,13 @@ export async function main(args: string[] = process.argv.slice(2)) {
         return;
       }
 
-      const { source, options } = parseAddArgs(args.slice(1));
+      const { source, options, unknownOption } = parseAddArgs(args.slice(1));
+      if (unknownOption) {
+        p.log.error(pc.red(`Unknown option for add: ${unknownOption}`));
+        p.log.message(pc.dim('Usage: apm add [options] <source>'));
+        p.log.message(pc.dim('Run "apm add --help" for supported options.'));
+        process.exit(1);
+      }
       if (!source) {
         p.log.error(pc.red('Missing source argument'));
         p.log.message(pc.dim('Usage: apm add <source> [options]'));

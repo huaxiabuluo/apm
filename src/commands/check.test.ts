@@ -385,6 +385,25 @@ describe('checkSkillVersion', () => {
       expect(result.hasUpdate).toBe(false);
       expect(result.error).toBe('Branch not found');
     });
+
+    it('commit 缺失时应该将其视为待更新状态', async () => {
+      const entry = {
+        sourceType: 'github' as const,
+        source: 'owner/repo',
+        sourceUrl: 'https://github.com/owner/repo.git',
+        mode: 'branch' as const,
+        branch: 'main',
+        skillPath: 'SKILL.md',
+      };
+
+      mockGetRemoteBranchCommit.mockResolvedValue('def987ghi654321');
+
+      const result = await checkSkillVersion('test-branch', entry);
+
+      expect(result.hasUpdate).toBe(true);
+      expect(result.current.version).toBe('none');
+      expect(result.latest?.version).toBe('def987ghi654321');
+    });
   });
 });
 
